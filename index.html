@@ -39,7 +39,7 @@
         user-select: none;
     }
 
-    /* 📺 BROADCAST KERET: 16:9 NAGYKÉPERNYŐN, RESZPONZÍV MOBILON */
+    /* 📺 BROADCAST KERET */
     .tv-broadcast-frame {
         position: relative;
         width: 100vw;
@@ -50,7 +50,7 @@
         container-type: inline-size;
         background: radial-gradient(circle at 45% 25%, #07193f 0%, #020713 75%, #000208 100%);
         display: grid;
-        grid-template-rows: 8.0% 83.2% 8.8%;
+        grid-template-rows: 8.2% 83.0% 8.8%;
         grid-template-columns: 68% 32%;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.12);
@@ -58,7 +58,7 @@
         transform: translateZ(0);
     }
 
-    /* 📱 MOBILPORTRAIT OPTIMALIZÁLÁS: ZÉRÓ EGYMÁSRA CSÚSZÁS */
+    /* 📱 MOBILPORTRAIT OPTIMALIZÁLÁS */
     @media (max-width: 900px), (orientation: portrait) {
         body { overflow-y: auto; height: auto; }
         .tv-broadcast-frame {
@@ -69,12 +69,11 @@
             grid-template-rows: auto 1fr auto;
             grid-template-columns: 100%;
         }
-        .ws-main-stage { grid-column: 1 !important; grid-row: 2 !important; border-right: none !important; min-height: 52vh; }
-        .ws-sidebar { display: none; } /* Mobilon a lényeg a főkijelző és az alsó futószalag */
+        .ws-main-stage { grid-column: 1 !important; grid-row: 2 !important; border-right: none !important; min-height: 54vh; }
+        .ws-sidebar { display: none; }
         .brand-slogan-text { display: none; }
     }
 
-    /* 🔊 ÉLŐ ADÁS INDÍTÁSA BANNER */
     .unmute-overlay-banner {
         position: absolute; top: 1.5cqw; left: 50%; transform: translateX(-50%);
         z-index: 999999; background: var(--ws-cherry); color: #fff;
@@ -86,7 +85,7 @@
     }
     @keyframes pulseLiveBanner { 0% { transform: translateX(-50%) scale(0.98); } 100% { transform: translateX(-50%) scale(1.02); } }
 
-    /* 🏷️ 1. FELSŐ BAR ÉS CHERRY LOGÓ SZLOGENNEL */
+    /* 🏷️ FELSŐ BAR ÉS CHERRY LOGÓ */
     .ws-top-bar {
         grid-column: 1 / 3; grid-row: 1;
         background: linear-gradient(90deg, #020b1e 0%, #061f52 40%, #08296c 70%, #020b1e 100%);
@@ -102,9 +101,7 @@
         font-weight: 900; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.9); line-height: 1.1;
     }
     .brand-main-title span { color: var(--ws-cyan); }
-    .brand-slogan-text {
-        font-size: 0.62rem; color: #cbd5e1; font-weight: 700; letter-spacing: 0.5px;
-    }
+    .brand-slogan-text { font-size: 0.62rem; color: #cbd5e1; font-weight: 700; letter-spacing: 0.5px; }
 
     .top-segment-wrap {
         display: flex; align-items: center; gap: 8px; font-weight: 800;
@@ -143,7 +140,7 @@
         text-shadow: 0 0 10px rgba(56,189,248,0.8); letter-spacing: 1px;
     }
 
-    /* 🎬 2. FŐ VIZUÁLIS ZÓNA (BAL ~68%) */
+    /* 🎬 FŐ VIZUÁLIS ZÓNA */
     .ws-main-stage {
         grid-column: 1; grid-row: 2; position: relative; overflow: hidden;
         border-right: 2px solid var(--ws-border-glow); background: #020612;
@@ -157,21 +154,32 @@
     }
     .ws-stage-segment.active-segment { opacity: 1; pointer-events: auto; }
 
-    /* 🛰️ RADAR & MŰHOLD LEAFLET TÉRKÉPEK */
+    /* 🗺️ TÉRKÉPEK */
     #real-radar-map, #real-satellite-map {
         width: 100%; height: 100%; border-radius: 8px;
-        background: #090e1a; border: 1.5px solid var(--ws-border);
+        background: #060c18; border: 1.5px solid var(--ws-border);
         overflow: hidden;
     }
     .leaflet-control-attribution, .leaflet-control-zoom { display: none !important; }
 
-    .radar-city-pill {
-        background: rgba(3, 10, 28, 0.92); border: 1px solid var(--ws-cyan);
-        color: #fff; border-radius: 4px; padding: 1px 5px; font-family: 'JetBrains Mono', monospace;
-        font-size: 10px; font-weight: 800; white-space: nowrap; display: flex; align-items: center; gap: 4px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    /* 🎯 MÉRTANI PONTOSSÁGÚ RADAR JELÖLŐK (ZÉRÓ ELCSÚSZÁS) */
+    .radar-marker-wrap {
+        position: relative; width: 0; height: 0;
     }
-    .radar-city-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ws-cyan); box-shadow: 0 0 6px var(--ws-cyan); }
+    .radar-marker-dot {
+        position: absolute; left: -4px; top: -4px; width: 8px; height: 8px;
+        border-radius: 50%; background: var(--ws-cyan);
+        box-shadow: 0 0 8px var(--ws-cyan), 0 0 14px rgba(56,189,248,0.9);
+        border: 1.5px solid #fff;
+    }
+    .radar-marker-label {
+        position: absolute; left: 8px; top: -10px;
+        background: rgba(3, 10, 28, 0.94); border: 1px solid var(--ws-cyan);
+        color: #fff; border-radius: 4px; padding: 1px 6px;
+        font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
+        white-space: nowrap; display: flex; align-items: center; gap: 5px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.85); pointer-events: none;
+    }
 
     .radar-glass-hud {
         position: absolute; bottom: 1.2cqw; left: 1.2cqw; background: rgba(3, 9, 24, 0.94);
@@ -269,8 +277,15 @@
         background: rgba(255,255,255,0.04); padding: 7px 10px; border-radius: 6px;
         font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 800;
     }
+    .lbc-storm-badge {
+        display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 20px;
+        font-size: 0.72rem; font-weight: 900; text-transform: uppercase; width: fit-content; margin-top: 6px;
+    }
+    .storm-lvl-0 { background: #15803d; color: #fff; }
+    .storm-lvl-1 { background: #ca8a04; color: #000; }
+    .storm-lvl-2 { background: #dc2626; color: #fff; }
 
-    /* 📊 24 ÓRÁS HŐMÉRSÉKLETI SÁV-GRAFIKON */
+    /* 24 ÓRÁS HŐMÉRSÉKLETI SÁVOK */
     .hourly-graph-strip {
         display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px;
         align-items: flex-end; height: 140px; margin: auto 0;
@@ -433,7 +448,7 @@
             </div>
         </div>
 
-        <!-- 🛰️ 2. SZEGMENS: TŰÉLES INFRAVÖRÖS MŰHOLDTÉRKÉP (LEAFLET HD MULTI-TILE) -->
+        <!-- 🛰️ 2. SZEGMENS: TŰÉLES INFRAVÖRÖS MŰHOLDTÉRKÉP (HD TILE ALAPON) -->
         <div class="ws-stage-segment" id="seg-satellite">
             <div id="real-satellite-map"></div>
             <div class="radar-glass-hud">
@@ -442,7 +457,7 @@
             </div>
         </div>
 
-        <!-- 🌅 3. SZEGMENS: NAPI KRÓNIKA & HAJNALI VISSZATEKINTŐ (ÚJ AI MODUL!) -->
+        <!-- 🌅 3. SZEGMENS: NAPI KRÓNIKA & HAJNALI VISSZATEKINTŐ -->
         <div class="ws-stage-segment" id="seg-ai-chronicle">
             <div class="ai-synoptic-card">
                 <div class="ai-syn-header">
@@ -450,7 +465,7 @@
                     <span style="font-family:'JetBrains Mono',monospace; color:var(--ws-cyan); font-weight:800;">HAJNALTÓL MOSTANÁIG</span>
                 </div>
                 <div class="ai-syn-body" id="ai-body-chronicle">A hajnali minimumok és a délelőtti melegedés adatainak kiértékelése...</div>
-                <div class="ai-syn-footer"><span>ADATBÁZIS: DWD ICON-D2 FELSZÍNI HÁLÓZAT</span><span style="color:var(--ws-green);">● VALÓS CHERRY WEATHER FEED</span></div>
+                <div class="ai-syn-footer"><span>TELEMETRIA: 72 HAZAI MÉRŐPONT</span><span style="color:var(--ws-green);">● VALÓS CHERRY WEATHER FEED</span></div>
             </div>
         </div>
 
@@ -460,7 +475,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <div class="ext-title">📈 24 ÓRÁS HŐMÉRSÉKLETI ÉS CSAPADÉK PROFIL</div>
-                        <div style="font-size:0.75rem; color:#94a3b8;">DWD ICON-D2 ÓRÁNKÉNTI ELŐREJELZÉS</div>
+                        <div style="font-size:0.75rem; color:#94a3b8;">ÓRÁNKÉNTI ELŐREJELZÉS</div>
                     </div>
                     <div style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--ws-amber);">ÓRÁRÓL ÓRÁRA</div>
                 </div>
@@ -469,7 +484,7 @@
 
                 <div style="display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#cbd5e1; border-top:1px solid rgba(255,255,255,0.1); padding-top:6px;">
                     <span>SÁRGÁS OSZLOPOK: HŐMÉRSÉKLET (°C)</span>
-                    <span style="color:var(--ws-cyan);">DWD ICON-D2 MODELLEZÉS</span>
+                    <span style="color:var(--ws-cyan);">METEOROLÓGIAI IDŐSOR</span>
                 </div>
             </div>
         </div>
@@ -487,7 +502,6 @@
                     <div style="font-size:0.75rem; color:#cbd5e1; line-height:1.5;">
                         A parlagfű és fűfélék valós légköri részecskesűrűsége Magyarország légterében, mérve részecske / m³ egységben.
                     </div>
-                    <div style="font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--ws-green);">● HITELES EURÓPAI MODELL</div>
                 </div>
 
                 <div class="aqi-bar-card">
@@ -496,28 +510,28 @@
                         <div class="aqi-pollutant-row">
                             <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
                                 <span>PARLAGFŰ (RAGWEED)</span>
-                                <strong id="val-pollen-ragweed">-- részecske/m³</strong>
+                                <strong id="val-pollen-ragweed">-- db/m³</strong>
                             </div>
                             <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-ragweed" style="width:10%; background:var(--ws-cherry);"></div></div>
                         </div>
                         <div class="aqi-pollutant-row">
                             <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
                                 <span>PÁZSITFŰFÉLÉK (GRASS)</span>
-                                <strong id="val-pollen-grass">-- részecske/m³</strong>
+                                <strong id="val-pollen-grass">-- db/m³</strong>
                             </div>
                             <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-grass" style="width:25%; background:var(--ws-amber);"></div></div>
                         </div>
                         <div class="aqi-pollutant-row">
                             <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
                                 <span>NYÍRFA (BIRCH)</span>
-                                <strong id="val-pollen-birch">-- részecske/m³</strong>
+                                <strong id="val-pollen-birch">-- db/m³</strong>
                             </div>
                             <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-birch" style="width:5%; background:var(--ws-green);"></div></div>
                         </div>
                         <div class="aqi-pollutant-row">
                             <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
                                 <span>ÜRÖM (MUGWORT)</span>
-                                <strong id="val-pollen-mugwort">-- részecske/m³</strong>
+                                <strong id="val-pollen-mugwort">-- db/m³</strong>
                             </div>
                             <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-mugwort" style="width:15%; background:var(--ws-cyan);"></div></div>
                         </div>
@@ -683,7 +697,7 @@
         <div class="ws-stage-segment" id="seg-balaton"><div class="balaton-stage-wrap" id="balaton-lakes-grid"></div></div>
     </main>
 
-    <!-- 3. JOBB OLDALI TELEMETRIA (L-BAR) -->
+    <!-- 3. JOBB OLDALI TELEMETRIA -->
     <aside class="ws-sidebar">
         <div class="sb-telemetry-header">
             <span class="sb-telemetry-title">📍 HELYI TELEMETRIA</span>
@@ -718,7 +732,7 @@
         </div>
 
         <div class="sb-source-badge">
-            <span>DWD ICON-D2 + CAMS POLLEN</span>
+            <span>72 HAZAI ÁLLOMÁS + CAMS POLLEN</span>
             <span style="color:var(--ws-green);">● CHERRY WEATHER</span>
         </div>
     </aside>
@@ -773,7 +787,23 @@
         playRadio(genreKey);
     }
 
-    // 🗺️ LEAFLET RADAR ÉS TŰÉLES HD MŰHOLDTÉRKÉP
+    // 🗺️ MAGYARORSZÁG KARTOGRÁFIAI HATÁRA (VILÁGÍTÓ NEONKÉK HATÁRVONAL)
+    const HUNGARY_BORDER_COORDS = [
+        [47.95, 17.15], [47.78, 17.40], [47.75, 18.15], [47.78, 18.75], [48.05, 18.95],
+        [48.10, 19.80], [48.25, 20.45], [48.55, 20.60], [48.40, 21.65], [48.35, 22.15],
+        [48.00, 22.85], [47.85, 22.75], [47.55, 21.90], [47.15, 21.70], [46.70, 21.50],
+        [46.25, 21.30], [46.12, 20.25], [46.00, 18.85], [45.85, 18.45], [45.75, 17.80],
+        [45.85, 17.10], [46.35, 16.70], [46.50, 16.45], [46.85, 16.35], [47.35, 16.45],
+        [47.65, 16.55], [47.95, 17.15]
+    ];
+
+    const BALATON_GEO_POLYGON = [
+        [46.700, 17.245], [46.740, 17.370], [46.780, 17.520], [46.810, 17.650],
+        [46.880, 17.850], [46.920, 17.890], [46.980, 18.060], [46.960, 18.140],
+        [46.910, 18.020], [46.850, 17.850], [46.780, 17.580], [46.740, 17.400],
+        [46.700, 17.245]
+    ];
+
     let leafletRadarMap = null;
     let leafletSatelliteMap = null;
     let radarLayers = [];
@@ -785,47 +815,48 @@
     let isSatelliteActiveSegment = false;
 
     const KEY_GPS_CITIES = [
-        { name: "Budapest", lat: 47.4979, lon: 19.0402 },
-        { name: "Debrecen", lat: 47.5316, lon: 21.6273 },
-        { name: "Szeged", lat: 46.2530, lon: 20.1414 },
-        { name: "Miskolc", lat: 48.1035, lon: 20.7784 },
-        { name: "Pécs", lat: 46.0727, lon: 18.2323 },
-        { name: "Győr", lat: 47.6875, lon: 17.6504 },
-        { name: "Nyíregyháza", lat: 47.9554, lon: 21.7167 },
-        { name: "Kecskemét", lat: 46.9075, lon: 19.6917 },
-        { name: "Székesfehérvár", lat: 47.1899, lon: 18.4107 },
-        { name: "Szombathely", lat: 47.2307, lon: 16.6218 },
-        { name: "Siófok", lat: 46.9041, lon: 18.0580 },
-        { name: "Balatonfüred", lat: 46.9567, lon: 17.8925 },
-        { name: "Keszthely", lat: 46.7686, lon: 17.2483 }
-    ];
-
-    const BALATON_GEO_POLYGON = [
-        [46.700, 17.245], [46.740, 17.370], [46.780, 17.520], [46.810, 17.650],
-        [46.880, 17.850], [46.920, 17.890], [46.980, 18.060], [46.960, 18.140],
-        [46.910, 18.020], [46.850, 17.850], [46.780, 17.580], [46.740, 17.400],
-        [46.700, 17.245]
+        { name: "Budapest", lat: 47.50, lon: 19.04 },
+        { name: "Debrecen", lat: 47.53, lon: 21.63 },
+        { name: "Szeged", lat: 46.25, lon: 20.14 },
+        { name: "Miskolc", lat: 48.10, lon: 20.78 },
+        { name: "Pécs", lat: 46.07, lon: 18.23 },
+        { name: "Győr", lat: 47.69, lon: 17.65 },
+        { name: "Nyíregyháza", lat: 47.96, lon: 21.72 },
+        { name: "Kecskemét", lat: 46.91, lon: 19.69 },
+        { name: "Székesfehérvár", lat: 47.19, lon: 18.41 },
+        { name: "Szombathely", lat: 47.23, lon: 16.62 },
+        { name: "Siófok", lat: 46.90, lon: 18.06 },
+        { name: "Balatonfüred", lat: 46.96, lon: 17.89 },
+        { name: "Keszthely", lat: 46.77, lon: 17.25 }
     ];
 
     function initMaps() {
         if (!leafletRadarMap) {
             leafletRadarMap = L.map('real-radar-map', {
-                center: [47.1625, 19.5033], zoom: 7, zoomControl: false, attributionControl: false,
+                center: [47.16, 19.50], zoom: 7, zoomControl: false, attributionControl: false,
                 dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
             });
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 10 }).addTo(leafletRadarMap);
-            L.polygon(BALATON_GEO_POLYGON, { color: '#38bdf8', weight: 2, opacity: 0.85, fillColor: '#0284c7', fillOpacity: 0.25 }).addTo(leafletRadarMap);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(leafletRadarMap);
+
+            // 🇭🇺 MAGYARORSZÁG VILÁGÍTÓ ORSZÁGHATÁRA (LÁTHATÓ ÉS ÉLES!)
+            L.polygon(HUNGARY_BORDER_COORDS, {
+                color: '#38bdf8', weight: 2.2, opacity: 0.95, fillColor: '#06173b', fillOpacity: 0.35
+            }).addTo(leafletRadarMap);
+
+            L.polygon(BALATON_GEO_POLYGON, { color: '#38bdf8', weight: 1.8, opacity: 0.9, fillColor: '#0284c7', fillOpacity: 0.5 }).addTo(leafletRadarMap);
             cityMarkersGroup = L.layerGroup().addTo(leafletRadarMap);
         }
 
-        // 🛰️ TŰÉLES INFRAVÖRÖS MŰHOLDTÉRKÉP LEAFLET ALAPON
         if (!leafletSatelliteMap) {
             leafletSatelliteMap = L.map('real-satellite-map', {
-                center: [47.1625, 19.5033], zoom: 7, zoomControl: false, attributionControl: false,
+                center: [47.16, 19.50], zoom: 7, zoomControl: false, attributionControl: false,
                 dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
             });
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 10 }).addTo(leafletSatelliteMap);
-            L.polygon(BALATON_GEO_POLYGON, { color: '#38bdf8', weight: 1.5, opacity: 0.7, fillColor: '#0284c7', fillOpacity: 0.2 }).addTo(leafletSatelliteMap);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(leafletSatelliteMap);
+
+            L.polygon(HUNGARY_BORDER_COORDS, {
+                color: '#38bdf8', weight: 2.0, opacity: 0.9, fillColor: '#020b1e', fillOpacity: 0.2
+            }).addTo(leafletSatelliteMap);
         }
     }
 
@@ -839,22 +870,26 @@
         return stationsList.find(s => normStr(s.name) === target || normStr(s.name).includes(target));
     }
 
+    // 🎯 MÉRTANI PONTOSSÁGÚ JELÖLŐK RENDERELÉSE (ZÉRÓ ELCSÚSZÁS!)
     function renderGpsCityMarkers() {
         if (!cityMarkersGroup) return;
         cityMarkersGroup.clearLayers();
 
         KEY_GPS_CITIES.forEach(c => {
             const st = findStationByName(c.name);
-            const tempStr = (st && st.temp !== undefined && st.temp !== null) ? `${st.temp > 0 ? '+' : ''}${st.temp}°` : "--°";
+            const tempStr = (st && st.temp !== undefined && st.temp !== null) ? `${st.temp > 0 ? '+' : ''}${st.temp}°` : "";
 
             const iconHtml = `
-                <div class="radar-city-pill">
-                    <div class="radar-city-dot"></div>
-                    <span>${c.name.toUpperCase()}</span>
-                    <strong style="color:var(--ws-amber);">${tempStr}</strong>
+                <div class="radar-marker-wrap">
+                    <div class="radar-marker-dot"></div>
+                    <div class="radar-marker-label">
+                        <span>${c.name.toUpperCase()}</span>
+                        <strong style="color:var(--ws-amber);">${tempStr}</strong>
+                    </div>
                 </div>
             `;
-            const customIcon = L.divIcon({ className: '', html: iconHtml, iconSize: [84, 18], iconAnchor: [42, 9] });
+            // iconAnchor: [0, 0] biztosítja, hogy a pötty geometriailag a ponton legyen!
+            const customIcon = L.divIcon({ className: '', html: iconHtml, iconSize: [0, 0], iconAnchor: [0, 0] });
             L.marker([c.lat, c.lon], { icon: customIcon, interactive: false }).addTo(cityMarkersGroup);
         });
     }
@@ -867,7 +902,7 @@
 
             const host = rv.host || "https://tilecache.rainviewer.com";
 
-            // 1. Radar animáció
+            // 1. Doppler Radar ciklus
             if (rv.radar && rv.radar.past && rv.radar.past.length > 0) {
                 const pastFrames = rv.radar.past.slice(-8);
                 if (radarAnimTimer) clearInterval(radarAnimTimer);
@@ -904,11 +939,11 @@
             if (rv.satellite && rv.satellite.infrared && rv.satellite.infrared.length > 0) {
                 const latestSat = rv.satellite.infrared[rv.satellite.infrared.length - 1];
                 L.tileLayer(`${host}${latestSat.path}/512/{z}/{x}/{y}/0/0_0.png`, {
-                    opacity: 0.90, zIndex: 90
+                    opacity: 0.88, zIndex: 90
                 }).addTo(leafletSatelliteMap);
 
                 const satDate = new Date(latestSat.time * 1000);
-                document.getElementById('lbl-sat-time').textContent = `INFRAVÖRÖS MŰHOLD: ${satDate.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })} [ÉLŐ TÖBBSZÖRÖS FELBONTÁS]`;
+                document.getElementById('lbl-sat-time').textContent = `INFRAVÖRÖS MŰHOLD: ${satDate.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })} [HD TÖBBRÉTEGŰ]`;
             }
 
         } catch (e) {}
@@ -942,9 +977,9 @@
     async function fetchBroadcastFeed() {
         try {
             const res = await fetch(BROADCAST_API_URL);
-            if (!res.ok) return;
+            if (!res.ok) throw new Error("API kapcsolat megszakadt");
             const data = await res.json();
-            if (data.status !== "success" || !Array.isArray(data.stations)) return;
+            if (!data || !Array.isArray(data.stations) || data.stations.length === 0) return;
 
             broadcastData = data;
             stationsList = data.stations;
@@ -963,7 +998,10 @@
             if (data.physicsTelemetry) render5PhysicsSegments(data.physicsTelemetry);
             
             queueNextTickerData();
-        } catch(e) {}
+        } catch(e) {
+            // Hálózati hiba esetén 4 másodperc múlva automatikusan újrapróbálkozik
+            setTimeout(fetchBroadcastFeed, 4000);
+        }
     }
 
     function renderAirQualityChart(aq) {
@@ -989,16 +1027,16 @@
         document.getElementById('pollen-main-desc').textContent = pol.ragweed > 10 ? "ÉLÉNK PARLAGFŰ TERHELÉS" : "ALACSONY PARLAGFŰ SZINT";
 
         document.getElementById('val-pollen-ragweed').textContent = `${pol.ragweed} db/m³`;
-        document.getElementById('bar-pollen-ragweed').style.width = `${Math.min(100, pol.ragweed * 2)}%`;
+        document.getElementById('bar-pollen-ragweed').style.width = `${Math.min(100, pol.ragweed * 5)}%`;
 
         document.getElementById('val-pollen-grass').textContent = `${pol.grass} db/m³`;
-        document.getElementById('bar-pollen-grass').style.width = `${Math.min(100, pol.grass * 2)}%`;
+        document.getElementById('bar-pollen-grass').style.width = `${Math.min(100, pol.grass * 4)}%`;
 
         document.getElementById('val-pollen-birch').textContent = `${pol.birch} db/m³`;
-        document.getElementById('bar-pollen-birch').style.width = `${Math.min(100, pol.birch * 2)}%`;
+        document.getElementById('bar-pollen-birch').style.width = `${Math.min(100, pol.birch * 5)}%`;
 
         document.getElementById('val-pollen-mugwort').textContent = `${pol.mugwort} db/m³`;
-        document.getElementById('bar-pollen-mugwort').style.width = `${Math.min(100, pol.mugwort * 2)}%`;
+        document.getElementById('bar-pollen-mugwort').style.width = `${Math.min(100, pol.mugwort * 5)}%`;
     }
 
     function renderHourlyGraph(hourly) {
@@ -1007,12 +1045,12 @@
         container.innerHTML = '';
 
         const sample = hourly.slice(0, 12);
-        const maxTemp = Math.max(...sample.map(h => h.temp), 25);
+        const maxTemp = Math.max(...sample.map(h => h.temp), 22);
         const minTemp = Math.min(...sample.map(h => h.temp), 0);
         const range = Math.max(1, maxTemp - minTemp);
 
         sample.forEach(h => {
-            const heightPercent = Math.max(15, Math.min(100, ((h.temp - minTemp) / range) * 90 + 10));
+            const heightPercent = Math.max(15, Math.min(100, ((h.temp - minTemp) / range) * 85 + 15));
             container.innerHTML += `
                 <div class="hourly-bar-col">
                     <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:var(--ws-amber);">${h.temp}°</span>
@@ -1257,7 +1295,7 @@
         { id: "seg-radar", title: "MAGYARORSZÁG CSAPADÉKRADAR (DOPPLER MOZGÓKÉP)" },
         { id: "seg-satellite", title: "KÁRPÁT-MEDENCE HD FELHŐMŰHOLD (INFRAVÖRÖS)" },
         { id: "seg-ai-chronicle", title: "NAPI KRÓNIKA & HAJNALI VISSZATEKINTŐ" },
-        { id: "seg-hourly-trend", title: "DWD ICON-D2 · 24 ÓRÁS HŐMÉRSÉKLETI PROFIL" },
+        { id: "seg-hourly-trend", title: "24 ÓRÁS HŐMÉRSÉKLETI PROFIL" },
         { id: "seg-pollen", title: "KOPERNIKUSZ CAMS · VALÓS POLLENJELENTÉS" },
         { id: "seg-cams-aqi", title: "KOPERNIKUSZ CAMS · VALÓS LÉGSZENNYEZETTSÉG (EAQI)" },
         { id: "seg-phy-pressure", title: "FIZIKAI TELEMETRIA · LÉGNYOMÁS & BAROMETRIKUS HINTA" },
@@ -1267,7 +1305,7 @@
         { id: "seg-ai-radarPrecip", title: "AI METEOROLÓGUS · TÁVOLSÁGI RADAR & CELLAANALÍZIS" },
         { id: "seg-ai-wind", title: "AI METEOROLÓGUS · SZÉLMEZŐ & LÖKÉSEK" },
         { id: "seg-ai-traffic", title: "AI METEOROLÓGUS · AUTÓPÁLYÁK (M0-M7)" },
-        { id: "seg-telemetry-1", title: "ORSZÁGOS TELEMETRIA · 85 HAZAI VÁROS" },
+        { id: "seg-telemetry-1", title: "ORSZÁGOS TELEMETRIA · 72 HAZAI VÁROS" },
         { id: "seg-city-10", title: "10 KIEMELT NAGYVÁROS 3 NAPOS ELŐREJELZÉSE" },
         { id: "seg-extremes", title: "SZÉLLÖKÉS TOPLISTA & SZÉLSŐÉRTÉKEK" },
         { id: "seg-balaton", title: "BALATONI MÉRŐHÁLÓZAT & VIHARJELZÉS" }
