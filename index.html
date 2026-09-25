@@ -2,1367 +2,1824 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CHERRY WEATHER · 24/7 Magyar Meteorológiai Adás</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#020610">
+<title>CHERRY WEATHER · Magyarország 24/7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <style>
-    :root {
-        --ws-navy-bg: #020713;
-        --ws-panel-dark: rgba(4, 10, 26, 0.96);
-        --ws-panel-card: rgba(8, 20, 50, 0.94);
-        --ws-cherry: #ff1155;
-        --ws-cyan: #38bdf8;
-        --ws-amber: #facc15;
-        --ws-green: #10b981;
-        --ws-border: rgba(255, 255, 255, 0.14);
-        --ws-border-glow: rgba(56, 189, 248, 0.45);
-    }
+:root{
+  --bg:#050b1a;--bg-deep:#020610;
+  --border:rgba(120,180,255,0.14);--border-hi:rgba(120,180,255,0.35);
+  --cyan:#38bdf8;--amber:#fbbf24;--cherry:#ff1155;
+  --green:#22c55e;--orange:#f97316;--purple:#a855f7;
+  --text:#f1f5f9;--text-dim:#94a3b8;--text-mute:#64748b;
+  --radius:10px;--shadow:0 10px 40px rgba(0,0,0,0.6);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'Inter',sans-serif}
+body{display:flex;align-items:center;justify-content:center;user-select:none;overscroll-behavior:none;position:fixed;inset:0}
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+/* ============ FRAME ============ */
+.frame{
+  position:relative;width:100vw;height:100vh;
+  max-width:calc(100vh * 16 / 9);max-height:calc(100vw * 9 / 16);
+  aspect-ratio:16/9;
+  background:radial-gradient(ellipse at 20% 0%, #0d1b3d 0%, #050b1a 45%, #020610 100%);
+  display:grid;
+  grid-template-rows:clamp(44px,7vh,60px) 1fr clamp(38px,6vh,50px);
+  grid-template-columns:clamp(260px,22vw,360px) 1fr;
+  grid-template-areas:"top top" "side main" "tick tick";
+  overflow:hidden;border:1px solid rgba(120,180,255,0.15);box-shadow:var(--shadow);
+}
 
-    body {
-        background: #000;
-        font-family: 'Outfit', sans-serif;
-        color: #fff;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        user-select: none;
-    }
+/* ============ TOP BAR ============ */
+.top{
+  grid-area:top;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(8px,1.2vw,20px);padding-top:var(--safe-top);
+  background:linear-gradient(90deg,#07122b 0%,#0d1f4a 50%,#07122b 100%);
+  border-bottom:1px solid var(--border);position:relative;gap:clamp(6px,0.8vw,12px);z-index:100;min-width:0;
+}
+.top::after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.6;}
+.brand{display:flex;align-items:center;gap:clamp(6px,0.7vw,12px);flex-shrink:0;min-width:0}
+.brand svg{width:clamp(24px,2.4vw,32px);height:clamp(24px,2.4vw,32px);filter:drop-shadow(0 0 8px rgba(255,17,85,0.5))}
+.brand-title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(11px,1.1vw,15px);letter-spacing:1px;line-height:1;white-space:nowrap}
+.brand-title span{color:var(--cyan)}
+.brand-sub{font-size:clamp(7px,0.7vw,10px);color:var(--text-mute);font-weight:600;letter-spacing:0.5px;margin-top:2px;white-space:nowrap}
 
-    /* 📺 BROADCAST KERET */
-    .tv-broadcast-frame {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        max-width: 177.78vh;
-        max-height: 56.25vw;
-        aspect-ratio: 16 / 9;
-        container-type: inline-size;
-        background: radial-gradient(circle at 45% 25%, #07193f 0%, #020713 75%, #000208 100%);
-        display: grid;
-        grid-template-rows: 8.2% 83.0% 8.8%;
-        grid-template-columns: 68% 32%;
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.12);
-        box-shadow: 0 0 50px rgba(0,0,0,0.95);
-        transform: translateZ(0);
-    }
+.radio-control{display:flex;align-items:center;gap:clamp(4px,0.5vw,10px);padding:clamp(2px,0.3vw,4px) clamp(6px,0.9vw,12px);background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:20px;flex-shrink:0}
+.radio-btn{background:var(--cherry);border:none;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:clamp(9px,0.85vw,11px);font-weight:800;padding:clamp(3px,0.4vw,5px) clamp(6px,0.9vw,12px);border-radius:14px;cursor:pointer;transition:background 0.2s;white-space:nowrap}
+.radio-btn:hover{background:#ff3377}
+.radio-genres{display:flex;gap:clamp(2px,0.2vw,3px)}
+.genre-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Space Grotesk',sans-serif;font-size:clamp(8px,0.75vw,10px);font-weight:700;padding:clamp(2px,0.3vw,4px) clamp(4px,0.6vw,8px);border-radius:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.genre-btn:hover{color:#fff;border-color:var(--cyan)}
+.genre-btn.active{background:var(--cyan);color:#020b1e;border-color:var(--cyan);font-weight:800}
+.radio-now{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.75vw,10px);font-weight:700;color:var(--text-dim);max-width:clamp(80px,11vw,150px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live-dot-small{width:6px;height:6px;border-radius:50%;background:var(--cherry);box-shadow:0 0 8px var(--cherry);animation:blink 1.2s infinite;flex-shrink:0}
 
-    /* 📱 MOBILPORTRAIT OPTIMALIZÁLÁS */
-    @media (max-width: 900px), (orientation: portrait) {
-        body { overflow-y: auto; height: auto; }
-        .tv-broadcast-frame {
-            aspect-ratio: auto;
-            max-width: 100vw;
-            max-height: none;
-            height: 100vh;
-            grid-template-rows: auto 1fr auto;
-            grid-template-columns: 100%;
-        }
-        .ws-main-stage { grid-column: 1 !important; grid-row: 2 !important; border-right: none !important; min-height: 54vh; }
-        .ws-sidebar { display: none; }
-        .brand-slogan-text { display: none; }
-    }
+.segment-indicator{display:flex;align-items:center;gap:clamp(4px,0.6vw,10px);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(9px,0.85vw,11px);letter-spacing:1px;text-transform:uppercase;color:var(--text);padding:clamp(3px,0.5vw,6px) clamp(8px,1.1vw,14px);background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:20px;flex:1;justify-content:center;min-width:0}
+.segment-indicator span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--cherry);box-shadow:0 0 10px var(--cherry);animation:blink 1.2s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-    .unmute-overlay-banner {
-        position: absolute; top: 1.5cqw; left: 50%; transform: translateX(-50%);
-        z-index: 999999; background: var(--ws-cherry); color: #fff;
-        padding: 0.6cqw 2.2cqw; border-radius: 30px; font-weight: 900;
-        font-size: clamp(0.75rem, 1.1cqw, 1.05rem); cursor: pointer; display: flex;
-        align-items: center; gap: 10px; border: 2px solid #ffffff;
-        box-shadow: 0 0 35px rgba(255,17,85,0.95);
-        animation: pulseLiveBanner 1.8s infinite alternate;
-    }
-    @keyframes pulseLiveBanner { 0% { transform: translateX(-50%) scale(0.98); } 100% { transform: translateX(-50%) scale(1.02); } }
+.top-right{display:flex;align-items:center;gap:clamp(4px,0.7vw,14px);flex-shrink:0}
+.sync-badge{font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.7vw,10px);font-weight:700;color:var(--cyan);background:rgba(56,189,248,0.08);padding:3px 8px;border-radius:4px;border:1px solid rgba(56,189,248,0.2);white-space:nowrap}
+.clock{font-family:'JetBrains Mono',monospace;font-size:clamp(13px,1.4vw,20px);font-weight:800;color:#fff;letter-spacing:1px;text-shadow:0 0 12px rgba(56,189,248,0.5);white-space:nowrap}
 
-    /* 🏷️ FELSŐ BAR ÉS CHERRY LOGÓ */
-    .ws-top-bar {
-        grid-column: 1 / 3; grid-row: 1;
-        background: linear-gradient(90deg, #020b1e 0%, #061f52 40%, #08296c 70%, #020b1e 100%);
-        border-bottom: 2px solid var(--ws-cyan);
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 0 1.2cqw; z-index: 1000;
-    }
-    .brand-wrap { display: flex; align-items: center; gap: 0.8cqw; }
-    .brand-logo-svg { width: 34px; height: 34px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(255,17,85,0.8)); }
-    .brand-title-group { display: flex; flex-direction: column; }
-    .brand-main-title {
-        font-family: 'Space Grotesk', sans-serif; font-size: clamp(0.95rem, 1.25cqw, 1.40rem);
-        font-weight: 900; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.9); line-height: 1.1;
-    }
-    .brand-main-title span { color: var(--ws-cyan); }
-    .brand-slogan-text { font-size: 0.62rem; color: #cbd5e1; font-weight: 700; letter-spacing: 0.5px; }
+/* ============ SIDEBAR ============ */
+.side{grid-area:side;background:linear-gradient(180deg,rgba(5,12,28,0.95) 0%,rgba(2,6,16,0.98) 100%);border-right:1px solid var(--border);padding:clamp(8px,1vw,16px);padding-left:calc(clamp(8px,1vw,16px) + var(--safe-left));display:flex;flex-direction:column;gap:clamp(6px,0.8vw,12px);overflow:hidden}
+.side-head{display:flex;justify-content:space-between;align-items:center;padding:clamp(3px,0.4vw,6px) clamp(6px,0.8vw,12px);background:linear-gradient(90deg,rgba(56,189,248,0.08) 0%,transparent 100%);border-left:3px solid var(--cyan);border-radius:4px;flex-shrink:0}
+.side-head-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(9px,0.75vw,11px);letter-spacing:1.5px;color:var(--cyan);text-transform:uppercase}
+.side-head-count{font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.7vw,10px);font-weight:700;color:#fff}
 
-    .top-segment-wrap {
-        display: flex; align-items: center; gap: 8px; font-weight: 800;
-        font-size: clamp(0.68rem, 0.84cqw, 0.92rem); color: #ffffff;
-        text-transform: uppercase; letter-spacing: 0.8px;
-    }
-    .segment-live-dot {
-        width: 10px; height: 10px; border-radius: 50%; background: var(--ws-cherry);
-        box-shadow: 0 0 10px var(--ws-cherry); animation: pulseLiveDot 1.2s infinite alternate; flex-shrink: 0;
-    }
-    @keyframes pulseLiveDot { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+.station{background:linear-gradient(180deg,rgba(12,24,52,0.9) 0%,rgba(8,16,36,0.9) 100%);border:1px solid var(--border-hi);border-radius:var(--radius);padding:clamp(8px,1vw,14px);display:flex;flex-direction:column;gap:clamp(5px,0.6vw,10px);transition:opacity 0.4s ease;box-shadow:0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);flex:1;overflow:hidden;min-height:0}
+.station-name{font-family:'Space Grotesk',sans-serif;font-size:clamp(14px,1.6vw,22px);font-weight:800;letter-spacing:-0.3px;line-height:1;color:#fff}
+.station-county{font-size:clamp(7px,0.7vw,10px);color:var(--text-dim);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.station-icon-phrase{display:flex;justify-content:space-between;align-items:center;margin-top:-4px;gap:8px}
+.station-phrase{font-size:clamp(9px,0.85vw,12px);font-weight:700;color:var(--cyan);letter-spacing:0.3px;text-align:right;max-width:60%}
+.station-icon{width:clamp(32px,3vw,44px);height:clamp(32px,3vw,44px);flex-shrink:0}
+.station-temp-row{display:flex;align-items:baseline;gap:6px;margin:2px 0}
+.station-temp{font-family:'JetBrains Mono',monospace;font-size:clamp(36px,3.8vw,52px);font-weight:800;line-height:0.9;color:#fff;letter-spacing:-2px}
+.station-temp-unit{font-family:'JetBrains Mono',monospace;font-size:clamp(14px,1.4vw,20px);font-weight:700;color:var(--text-dim)}
+.station-stats{display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,0.5vw,8px);border-top:1px solid var(--border);padding-top:clamp(5px,0.6vw,10px)}
+.stat{display:flex;flex-direction:column;gap:1px}
+.stat-label{font-size:clamp(6px,0.6vw,9px);font-weight:700;color:var(--text-mute);letter-spacing:0.8px;text-transform:uppercase}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:clamp(9px,0.9vw,13px);font-weight:800;color:#fff}
+.station-source-row{font-size:clamp(8px,0.7vw,10px);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-mute);display:flex;justify-content:space-between;align-items:center;margin-top:2px;border-top:1px solid var(--border);padding-top:4px}
+.station-source-row span:last-child{color:var(--cyan);font-family:'JetBrains Mono',monospace}
+.forecast-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:clamp(3px,0.4vw,6px);border-top:1px solid var(--border);padding-top:clamp(5px,0.6vw,10px);margin-top:auto}
+.fc-cell{background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.12);border-radius:6px;padding:clamp(4px,0.4vw,7px) 2px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.fc-day{font-size:clamp(6px,0.55vw,9px);font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.5px}
+.fc-icon{width:clamp(16px,1.5vw,22px);height:clamp(16px,1.5vw,22px)}
+.fc-max{font-family:'JetBrains Mono',monospace;font-size:clamp(9px,0.8vw,12px);font-weight:800;color:var(--amber)}
+.fc-min{font-family:'JetBrains Mono',monospace;font-size:clamp(7px,0.7vw,10px);font-weight:700;color:var(--text-dim)}
 
-    .radio-suite-wrap {
-        display: flex; align-items: center; gap: 4px; background: rgba(3, 13, 38, 0.80);
-        border: 1px solid var(--ws-border); border-radius: 20px; padding: 2px 6px;
-    }
-    .radio-genre-btn {
-        background: transparent; border: none; color: #94a3b8; font-family: 'Space Grotesk', sans-serif;
-        font-size: 0.65rem; font-weight: 800; padding: 3px 6px; border-radius: 10px; cursor: pointer;
-        transition: color 0.15s ease, background 0.15s ease;
-    }
-    .radio-genre-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
-    .radio-genre-btn.active-genre {
-        background: var(--ws-cyan); color: #020b1e; font-weight: 900; box-shadow: 0 0 10px rgba(56,189,248,0.7);
-    }
+/* ============ MAIN STAGE ============ */
+.stage{grid-area:main;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 50%, rgba(10,25,60,0.5) 0%, transparent 80%);min-width:0;min-height:0}
+.seg{position:absolute;inset:0;padding:clamp(8px,1vw,16px);opacity:0;pointer-events:none;transition:opacity 0.5s ease;display:flex;flex-direction:column}
+.seg.active{opacity:1;pointer-events:auto}
+.seg-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:clamp(6px,0.7vw,12px);margin-bottom:clamp(6px,0.7vw,12px);border-bottom:1px solid var(--border);gap:8px;flex-shrink:0}
+.seg-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(11px,1.05vw,17px);font-weight:800;color:#fff;letter-spacing:0.3px;display:flex;align-items:center;gap:8px;min-width:0}
+.seg-title span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg-title-icon{color:var(--cyan);font-size:clamp(10px,0.9vw,15px);flex-shrink:0}
+.seg-meta{font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.7vw,11px);font-weight:700;color:var(--cyan);letter-spacing:0.5px;text-align:right;white-space:nowrap}
+.seg-body{flex:1;position:relative;overflow:hidden;min-height:0}
 
-    .top-right-meta { display: flex; align-items: center; gap: 8px; }
-    .top-sync-countdown {
-        font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 800;
-        color: var(--ws-cyan); background: rgba(6, 31, 82, 0.6); padding: 4px 8px; border-radius: 4px;
-        border: 1px solid var(--ws-border);
-    }
-    .top-clock-text {
-        font-family: 'JetBrains Mono', monospace; font-weight: 900;
-        font-size: clamp(0.90rem, 1.15cqw, 1.30rem); color: #fff;
-        text-shadow: 0 0 10px rgba(56,189,248,0.8); letter-spacing: 1px;
-    }
+/* MAPS */
+#radar-map,#sat-map{width:100%;height:100%;border-radius:var(--radius);background:#030916;border:1px solid var(--border);overflow:hidden}
+.leaflet-control-attribution,.leaflet-control-zoom{display:none!important}
+.leaflet-container{background:#020610!important}
+.map-hud{position:absolute;bottom:clamp(8px,1vw,16px);left:clamp(8px,1vw,16px);background:rgba(5,12,28,0.92);border:1px solid var(--cyan);border-radius:8px;padding:clamp(5px,0.6vw,10px) clamp(8px,1vw,16px);backdrop-filter:blur(8px);display:flex;flex-direction:column;gap:2px;z-index:1000}
+.map-hud-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(9px,0.85vw,13px);font-weight:800;color:#fff;display:flex;align-items:center;gap:8px}
+.map-hud-title::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cherry);box-shadow:0 0 8px var(--cherry);animation:blink 1.2s infinite}
+.map-hud-sub{font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.75vw,11px);font-weight:700;color:var(--cyan)}
 
-    /* 🎬 FŐ VIZUÁLIS ZÓNA */
-    .ws-main-stage {
-        grid-column: 1; grid-row: 2; position: relative; overflow: hidden;
-        border-right: 2px solid var(--ws-border-glow); background: #020612;
-        contain: strict;
-    }
+/* HOURLY */
+.hourly-chart{display:flex;align-items:flex-end;gap:3px;height:100%;padding:8px 4px 4px 4px}
+.hcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;min-width:0}
+.hbar{width:100%;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--amber) 0%,var(--cyan) 100%);min-height:8px;transition:height 0.5s ease;box-shadow:0 0 8px rgba(56,189,248,0.2)}
+.htemp{font-family:'JetBrains Mono',monospace;font-size:clamp(7px,0.65vw,10px);font-weight:800;color:var(--amber)}
+.hhour{font-family:'JetBrains Mono',monospace;font-size:clamp(6px,0.6vw,9px);font-weight:700;color:var(--text-mute)}
 
-    .ws-stage-segment {
-        position: absolute; inset: 0; opacity: 0; pointer-events: none;
-        transition: opacity 0.25s ease; display: flex; flex-direction: column; padding: 1.1cqw;
-        transform: translateZ(0); will-change: opacity;
-    }
-    .ws-stage-segment.active-segment { opacity: 1; pointer-events: auto; }
+/* AI OLDALAK */
+.ai-page{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:clamp(16px,2vw,40px);gap:clamp(12px,1.5vw,24px);text-align:center;overflow-y:auto}
+.ai-page::-webkit-scrollbar{width:6px}
+.ai-page::-webkit-scrollbar-thumb{background:rgba(56,189,248,0.3);border-radius:3px}
+.ai-page-icon{font-size:clamp(48px,6vw,96px);line-height:1;filter:drop-shadow(0 0 20px rgba(56,189,248,0.5))}
+.ai-page-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(20px,2.4vw,40px);font-weight:800;color:#fff;letter-spacing:0.5px}
+.ai-page-value{font-family:'JetBrains Mono',monospace;font-size:clamp(28px,3.5vw,56px);font-weight:800;line-height:1;letter-spacing:-1px}
+.ai-page-value.ok{color:var(--green)}
+.ai-page-value.warn{color:var(--amber)}
+.ai-page-value.bad{color:var(--cherry)}
+.ai-page-value.info{color:var(--cyan)}
+.ai-page-text{font-size:clamp(12px,1.05vw,17px);line-height:1.7;color:var(--text-dim);font-weight:500;max-width:950px;text-align:left}
+.ai-page-text b{color:#fff;font-weight:700}
+.ai-page-text .hl{color:var(--amber);font-weight:700}
+.ai-page-text .hl-c{color:var(--cyan);font-weight:700}
+.ai-page-text .hl-r{color:var(--cherry);font-weight:700}
+.ai-page-text .hl-g{color:var(--green);font-weight:700}
+.ai-page-footer{display:flex;gap:24px;font-family:'JetBrains Mono',monospace;font-size:clamp(9px,0.8vw,12px);color:var(--text-mute);font-weight:700;border-top:1px solid var(--border);padding-top:12px;margin-top:8px}
+.ai-page-footer .ok{color:var(--green)}
 
-    /* 🗺️ TÉRKÉPEK */
-    #real-radar-map, #real-satellite-map {
-        width: 100%; height: 100%; border-radius: 8px;
-        background: #060c18; border: 1.5px solid var(--ws-border);
-        overflow: hidden;
-    }
-    .leaflet-control-attribution, .leaflet-control-zoom { display: none !important; }
+/* GRIDS */
+.grid-5x2{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:1fr 1fr;gap:clamp(6px,0.7vw,10px);height:100%}
+.grid-4x5{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:clamp(6px,0.7vw,10px);height:100%}
+.card{background:linear-gradient(180deg,rgba(12,24,52,0.85) 0%,rgba(8,16,36,0.85) 100%);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(8px,0.8vw,12px);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-height:0}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.card-city{font-family:'Space Grotesk',sans-serif;font-size:clamp(11px,1vw,14px);font-weight:800;color:#fff;letter-spacing:0.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-county{font-size:clamp(7px,0.6vw,9px);font-weight:700;color:var(--cyan);letter-spacing:0.8px;text-transform:uppercase}
+.card-mid{display:flex;justify-content:space-between;align-items:center;margin:4px 0;gap:6px}
+.card-icon{width:clamp(24px,2.4vw,36px);height:clamp(24px,2.4vw,36px);flex-shrink:0}
+.card-temp{font-family:'JetBrains Mono',monospace;font-size:clamp(18px,1.8vw,26px);font-weight:800;color:var(--amber);letter-spacing:-1px}
+.card-phrase{font-size:clamp(8px,0.7vw,10px);font-weight:600;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-stats{display:grid;grid-template-columns:1fr 1fr;gap:2px;font-family:'JetBrains Mono',monospace;font-size:clamp(7px,0.6vw,9px);color:var(--text-mute);border-top:1px solid var(--border);padding-top:4px;margin-top:4px}
+.card-stats strong{color:#fff;font-weight:800}
 
-    /* 🎯 MÉRTANI PONTOSSÁGÚ RADAR JELÖLŐK (ZÉRÓ ELCSÚSZÁS) */
-    .radar-marker-wrap {
-        position: relative; width: 0; height: 0;
-    }
-    .radar-marker-dot {
-        position: absolute; left: -4px; top: -4px; width: 8px; height: 8px;
-        border-radius: 50%; background: var(--ws-cyan);
-        box-shadow: 0 0 8px var(--ws-cyan), 0 0 14px rgba(56,189,248,0.9);
-        border: 1.5px solid #fff;
-    }
-    .radar-marker-label {
-        position: absolute; left: 8px; top: -10px;
-        background: rgba(3, 10, 28, 0.94); border: 1px solid var(--ws-cyan);
-        color: #fff; border-radius: 4px; padding: 1px 6px;
-        font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
-        white-space: nowrap; display: flex; align-items: center; gap: 5px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.85); pointer-events: none;
-    }
+.split{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(8px,1vw,14px);height:100%}
+.big-card{background:linear-gradient(180deg,rgba(12,24,52,0.9) 0%,rgba(8,16,36,0.9) 100%);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(10px,1.2vw,20px);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-height:0}
+.big-card.green::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),transparent)}
+.big-card.cyan::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.big-card.cherry::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cherry),transparent)}
+.big-card.purple::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--purple),transparent)}
+.big-card.amber::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),transparent)}
+.metric-huge{font-family:'JetBrains Mono',monospace;font-size:clamp(30px,4vw,56px);font-weight:800;line-height:1;color:var(--amber);letter-spacing:-2px}
+.metric-desc{font-size:clamp(9px,0.85vw,14px);font-weight:700;margin-top:4px}
+.metric-sub{font-size:clamp(8px,0.72vw,11px);color:var(--text-dim);line-height:1.4;font-weight:500}
+.bar-row{display:flex;flex-direction:column;gap:4px;margin-bottom:clamp(6px,0.7vw,12px)}
+.bar-label{display:flex;justify-content:space-between;font-size:clamp(8px,0.75vw,11px);font-weight:700;gap:6px}
+.bar-label span:first-child{color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-label span:last-child{font-family:'JetBrains Mono',monospace;color:#fff;font-weight:800;white-space:nowrap}
+.bar-track{width:100%;height:clamp(6px,0.6vw,8px);background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
 
-    .radar-glass-hud {
-        position: absolute; bottom: 1.2cqw; left: 1.2cqw; background: rgba(3, 9, 24, 0.94);
-        border: 1.5px solid var(--ws-cyan); border-radius: 6px; padding: 8px 14px;
-        display: flex; flex-direction: column; gap: 2px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-    }
-    .radar-hud-title {
-        font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 0.85rem; color: #fff;
-        display: flex; align-items: center; gap: 6px;
-    }
-    .radar-hud-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; color: var(--ws-cyan); }
-    
-    .radar-dbz-scale-box {
-        position: absolute; bottom: 1.2cqw; right: 1.2cqw; background: rgba(3, 9, 24, 0.92);
-        border: 1px solid var(--ws-border); border-radius: 6px; padding: 6px 12px;
-        display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; font-weight: 800; z-index: 1000;
-    }
-    .dbz-bar {
-        width: 140px; height: 8px; border-radius: 3px;
-        background: linear-gradient(90deg, #38bdf8 0%, #10b981 30%, #facc15 65%, #ff1155 85%, #a855f7 100%);
-    }
+.bal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1vw,14px);height:100%}
+.lake{background:linear-gradient(180deg,rgba(12,24,52,0.9) 0%,rgba(8,16,36,0.9) 100%);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(10px,1.1vw,18px);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-height:0}
+.lake::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.lake-name{font-family:'Space Grotesk',sans-serif;font-size:clamp(10px,0.9vw,14px);font-weight:800;letter-spacing:1px;color:#fff;text-transform:uppercase}
+.lake-sub{font-size:clamp(7px,0.65vw,10px);color:var(--text-mute);font-weight:600;margin-top:2px}
+.lake-badge{display:inline-flex;padding:clamp(3px,0.4vw,6px) clamp(5px,0.6vw,10px);border-radius:14px;font-size:clamp(7px,0.65vw,10px);font-weight:800;letter-spacing:0.5px;text-transform:uppercase;width:fit-content;margin-top:6px}
+.lb-0{background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.4)}
+.lb-1{background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);animation:blink 1.8s infinite}
+.lb-2{background:rgba(255,17,85,0.2);color:#ff5c85;border:1px solid rgba(255,17,85,0.5);animation:blink 0.9s infinite}
+.lb-off{background:rgba(100,116,139,0.2);color:#94a3b8;border:1px solid rgba(100,116,139,0.4)}
+.lb-err{background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.5);animation:blink 1.5s infinite}
+.lake-temp{font-family:'JetBrains Mono',monospace;font-size:clamp(24px,2.8vw,40px);font-weight:800;color:var(--amber);letter-spacing:-2px;line-height:1;margin:8px 0 4px 0}
+.lake-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.7vw,10px);color:var(--text-mute);border-top:1px solid var(--border);padding-top:6px;margin-top:6px}
+.lake-stats strong{color:#fff;font-weight:800}
 
-    /* TELEMETRIA ÉS GRAFIKON PANELEK */
-    .aqi-chart-container, .physics-two-col { display: grid; grid-template-columns: 1fr 1.3fr; gap: 1.2cqw; height: 100%; }
-    .physics-two-col { grid-template-columns: 1fr 1fr; }
-    .aqi-gauge-card, .aqi-bar-card, .physics-box {
-        background: var(--ws-panel-card); border: 1.5px solid var(--ws-border);
-        border-radius: 10px; padding: 1.2cqw; display: flex; flex-direction: column; justify-content: space-between;
-    }
-    .aqi-gauge-card { border-top: 4px solid var(--ws-green); }
-    .aqi-bar-card, .physics-box { border-top: 4px solid var(--ws-cyan); }
-    .aqi-pollutant-row { display: flex; flex-direction: column; gap: 4px; font-family: 'JetBrains Mono', monospace; }
-    .aqi-bar-track { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; }
-    .aqi-bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
-    .physics-stat-val { font-family: 'JetBrains Mono', monospace; font-size: 2.7rem; font-weight: 900; color: var(--ws-amber); }
+.wind-full{display:flex;flex-direction:column;height:100%;gap:clamp(8px,1vw,16px);padding:clamp(8px,1vw,16px)}
+.wind-full-header{display:flex;justify-content:space-between;align-items:center;font-family:'Space Grotesk',sans-serif;font-size:clamp(14px,1.4vw,22px);font-weight:800;color:#fff;border-bottom:1px solid var(--border);padding-bottom:12px}
+.wind-full-list{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(6px,0.8vw,12px);flex:1;align-items:stretch}
+.wind-full-item{background:linear-gradient(180deg,rgba(12,24,52,0.9) 0%,rgba(8,16,36,0.9) 100%);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(10px,1.2vw,20px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;position:relative;overflow:hidden}
+.wind-full-item::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.wind-full-item:nth-child(1)::before{background:linear-gradient(90deg,var(--cherry),transparent)}
+.wind-full-item:nth-child(2)::before{background:linear-gradient(90deg,var(--orange),transparent)}
+.wind-rank{font-family:'JetBrains Mono',monospace;font-size:clamp(24px,3vw,48px);font-weight:800;color:var(--cyan);line-height:1}
+.wind-city{font-family:'Space Grotesk',sans-serif;font-size:clamp(13px,1.2vw,18px);font-weight:800;color:#fff;margin:6px 0}
+.wind-county{font-size:clamp(8px,0.7vw,11px);color:var(--text-mute);font-weight:600;text-transform:uppercase}
+.wind-gust{font-family:'JetBrains Mono',monospace;font-size:clamp(24px,2.8vw,44px);font-weight:800;color:var(--cherry);letter-spacing:-1px;margin-top:auto}
+.wind-dir{font-size:clamp(9px,0.8vw,13px);color:var(--text-dim);font-weight:700;margin-top:4px}
 
-    .ai-synoptic-card {
-        background: var(--ws-panel-card); border: 1.5px solid var(--ws-cyan);
-        border-top: 5px solid var(--ws-cherry); border-radius: 12px;
-        padding: 1.6cqw 2.0cqw; height: 100%; display: flex; flex-direction: column;
-        justify-content: space-between; box-shadow: 0 8px 30px rgba(0,0,0,0.85);
-    }
-    .ai-syn-header {
-        display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 1.5px solid rgba(255,255,255,0.12); padding-bottom: 8px;
-    }
-    .ai-syn-title {
-        font-family: 'Space Grotesk', sans-serif; font-size: 1.20rem; font-weight: 900; color: #fff;
-        display: flex; align-items: center; gap: 10px;
-    }
-    .ai-syn-body {
-        display: flex; flex-direction: column; gap: 12px; margin: auto 0;
-        font-size: clamp(0.95rem, 1.20cqw, 1.25rem); line-height: 1.55; color: #f1f5f9; font-weight: 500;
-    }
-    .ai-syn-footer {
-        display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace;
-        font-size: 0.78rem; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 8px;
-    }
+.rank{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:clamp(5px,0.6vw,10px) clamp(8px,1vw,14px);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:clamp(9px,0.85vw,12px);font-weight:700;border:1px solid var(--border);margin-bottom:clamp(4px,0.5vw,8px);gap:6px}
+.rank span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-idx{color:var(--cyan);margin-right:6px}
+.rank-val{color:var(--cherry);font-weight:800;white-space:nowrap}
 
-    .telemetry-grid-10, .city-deep-forecast-10 {
-        display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr);
-        gap: 0.7cqw; height: 100%;
-    }
-    .cov-card-large, .cdf-card {
-        background: var(--ws-panel-card); border: 1px solid var(--ws-border);
-        border-top: 3.5px solid var(--ws-cyan); border-radius: 8px; padding: 0.7cqw;
-        display: flex; flex-direction: column; justify-content: space-between;
-    }
-    .ccl-top { display: flex; justify-content: space-between; align-items: center; }
-    .ccl-city { font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
-    .ccl-county { font-size: 0.65rem; color: var(--ws-cyan); font-weight: 800; }
-    .ccl-main { display: flex; justify-content: space-between; align-items: center; margin: 3px 0; }
-    .ccl-temp { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 900; color: var(--ws-amber); }
-    .ccl-phrase { font-size: 0.74rem; color: #e2e8f0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ccl-details {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
-        font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #94a3b8;
-        border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;
-    }
-    .ccl-details strong { color: #fff; }
+.station-list{display:flex;flex-direction:column;gap:6px;height:100%;overflow-y:auto;padding-right:4px}
+.station-list::-webkit-scrollbar{width:5px}
+.station-list::-webkit-scrollbar-thumb{background:rgba(56,189,248,0.3);border-radius:3px}
+.station-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:6px;padding:8px 12px;font-size:clamp(10px,0.9vw,13px)}
+.station-row.alert{border-left-color:var(--cherry);background:rgba(255,17,85,0.05)}
+.station-row.warn{border-left-color:var(--amber);background:rgba(251,191,36,0.05)}
+.station-row-name{font-family:'Space Grotesk',sans-serif;font-weight:800;color:#fff;min-width:100px}
+.station-row-temp{font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--amber);min-width:50px;text-align:right}
+.station-row-phrase{color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.station-row-source{color:var(--text-mute);font-size:0.8em;font-family:'JetBrains Mono',monospace;font-weight:700}
+.station-row-issues{color:var(--cherry);font-size:0.85em;font-weight:700}
 
-    .cdf-city-name { font-size: 1.0rem; font-weight: 900; color: #fff; text-transform: uppercase; }
-    .cdf-days-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; }
+.error-banner{position:absolute;top:clamp(50px,6vw,70px);left:50%;transform:translateX(-50%);background:var(--cherry);color:#fff;padding:clamp(6px,0.7vw,10px) clamp(12px,1.5vw,22px);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:clamp(9px,0.8vw,12px);font-weight:700;box-shadow:0 0 25px rgba(255,17,85,0.7);z-index:1000;display:none;border:1px solid #fff;max-width:90%;text-align:center}
+.error-banner.show{display:block}
+.err-detail{position:absolute;top:clamp(90px,10vw,120px);left:50%;transform:translateX(-50%);background:rgba(5,12,28,0.95);color:#fff;padding:clamp(8px,1vw,14px) clamp(12px,1.5vw,22px);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:clamp(8px,0.7vw,10px);font-weight:600;box-shadow:var(--shadow);z-index:1000;display:none;max-width:80%;text-align:center;border:1px solid var(--border);word-break:break-word}
+.err-detail.show{display:block}
 
-    .extremes-grid-wrap, .balaton-stage-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2cqw; height: 100%; }
-    .wind-top-card, .extremes-card, .lake-broad-card {
-        background: var(--ws-panel-card); border: 1.5px solid var(--ws-border);
-        border-top: 4px solid var(--ws-cherry); border-radius: 10px; padding: 1.2cqw;
-        display: flex; flex-direction: column; justify-content: space-between;
-    }
-    .lake-broad-card { border-top: 4px solid var(--ws-cyan); }
-    .ext-title { font-size: 1.10rem; font-weight: 900; color: #fff; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px; }
-    .wind-rank-row {
-        display: flex; justify-content: space-between; align-items: center;
-        background: rgba(255,255,255,0.04); padding: 7px 10px; border-radius: 6px;
-        font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 800;
-    }
-    .lbc-storm-badge {
-        display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 20px;
-        font-size: 0.72rem; font-weight: 900; text-transform: uppercase; width: fit-content; margin-top: 6px;
-    }
-    .storm-lvl-0 { background: #15803d; color: #fff; }
-    .storm-lvl-1 { background: #ca8a04; color: #000; }
-    .storm-lvl-2 { background: #dc2626; color: #fff; }
+.tick{grid-area:tick;display:flex;align-items:center;background:linear-gradient(90deg,#050b1a 0%,#0a1836 50%,#050b1a 100%);border-top:1px solid var(--border);overflow:hidden;position:relative;padding-bottom:var(--safe-bottom)}
+.tick-lead{background:var(--cherry);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(9px,0.85vw,12px);padding:0 clamp(8px,1.2vw,18px);height:100%;display:flex;align-items:center;letter-spacing:1.5px;flex-shrink:0;box-shadow:6px 0 20px rgba(0,0,0,0.5);z-index:2;white-space:nowrap}
+.tick-vp{flex:1;overflow:hidden;white-space:nowrap;position:relative;height:100%}
+.tick-track{display:inline-flex;align-items:center;white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:clamp(10px,0.9vw,12px);font-weight:700;color:#e2e8f0;letter-spacing:0.4px;will-change:transform;transform:translate3d(0,0,0);position:absolute;left:0;top:0;height:100%;padding:0 20px;display:flex;align-items:center}
 
-    /* 24 ÓRÁS HŐMÉRSÉKLETI SÁVOK */
-    .hourly-graph-strip {
-        display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px;
-        align-items: flex-end; height: 140px; margin: auto 0;
-        background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;
-    }
-    .hourly-bar-col {
-        display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px;
-    }
-    .hourly-bar-fill {
-        width: 100%; border-radius: 3px; background: linear-gradient(180deg, var(--ws-amber) 0%, var(--ws-cyan) 100%);
-        min-height: 8px;
-    }
+.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:var(--bg-deep);z-index:500;transition:opacity 0.5s}
+.loading.hide{opacity:0;pointer-events:none}
+.spinner{width:clamp(30px,3vw,40px);height:clamp(30px,3vw,40px);border:3px solid rgba(56,189,248,0.15);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Space Grotesk',sans-serif;font-size:clamp(11px,1vw,13px);font-weight:700;color:var(--cyan);letter-spacing:2px;text-transform:uppercase}
+.loading-sub{font-size:clamp(9px,0.8vw,11px);color:var(--text-mute);font-weight:600;text-align:center;padding:0 20px}
 
-    .ws-sidebar {
-        grid-column: 2; grid-row: 2;
-        background: linear-gradient(180deg, rgba(3, 10, 26, 0.98) 0%, rgba(1, 5, 15, 0.99) 100%);
-        display: flex; flex-direction: column; justify-content: space-between;
-        padding: 1.1cqw; gap: 0.5cqw;
-    }
-    .sb-telemetry-header {
-        background: #061c48; border: 1px solid var(--ws-border); border-left: 4px solid var(--ws-cyan);
-        border-radius: 6px; padding: 5px 12px; display: flex; justify-content: space-between; align-items: center;
-    }
-    .sb-telemetry-title { font-family: 'Space Grotesk', sans-serif; font-size: 0.78rem; font-weight: 900; letter-spacing: 1px; color: var(--ws-cyan); text-transform: uppercase; }
+.fs-btn{position:fixed;bottom:calc(10px + var(--safe-bottom));right:calc(10px + var(--safe-right));background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:clamp(9px,0.85vw,11px);font-weight:800;padding:clamp(5px,0.6vw,8px) clamp(8px,1vw,14px);border-radius:6px;cursor:pointer;z-index:9999;font-family:'Space Grotesk',sans-serif;letter-spacing:0.5px;backdrop-filter:blur(8px)}
+.fs-btn:hover{background:rgba(56,189,248,0.2);border-color:var(--cyan)}
 
-    .sb-station-card {
-        background: var(--ws-panel-card); border: 1.5px solid var(--ws-border-glow); border-radius: 10px;
-        padding: 0.9cqw; display: flex; flex-direction: column; gap: 0.4cqw;
-        transition: opacity 0.18s ease; will-change: opacity;
-    }
-    .sb-station-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .sb-city-big { font-family: 'Space Grotesk', sans-serif; font-size: 1.30rem; font-weight: 900; text-transform: uppercase; line-height: 1.05; }
-    .sb-county-tag { font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
-    .sb-phrase-txt { font-size: 0.84rem; font-weight: 800; color: var(--ws-cyan); }
+/* FULLSCREEN */
+.frame:fullscreen,
+.frame:-webkit-full-screen,
+.frame:-moz-full-screen{
+  max-width:100vw;max-height:100vh;width:100vw;height:100vh;aspect-ratio:16/9;
+  border:none;border-radius:0;box-shadow:none;
+}
+.frame:fullscreen .side{display:flex !important}
+.frame:fullscreen .stage{grid-column:2 / 3 !important}
+.frame:fullscreen.idle{cursor:none}
+.frame:fullscreen *{user-select:none;-webkit-user-select:none}
 
-    .sb-main-measure-row { display: flex; align-items: center; justify-content: space-between; margin: 2px 0; }
-    .sb-temp-giant { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 900; color: var(--ws-amber); }
-    .sb-icon-wrap { width: 48px; height: 48px; }
-
-    .sb-rich-metrics {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 0.3cqw;
-        border-top: 1px solid rgba(255,255,255,0.12); padding-top: 0.4cqw;
-        font-family: 'JetBrains Mono', monospace; font-size: 0.70rem; color: #cbd5e1;
-    }
-    .sb-rich-metrics div { display: flex; flex-direction: column; }
-    .sb-rich-metrics span { font-size: 0.58rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
-    .sb-rich-metrics strong { font-size: 0.80rem; color: #ffffff; font-weight: 900; }
-
-    .sb-local-3day-strip {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
-        border-top: 1px solid rgba(255,255,255,0.12); padding-top: 0.4cqw;
-    }
-    .sb-3day-cell {
-        background: rgba(255,255,255,0.06); border-radius: 5px; padding: 4px 2px;
-        display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.66rem;
-    }
-
-    .sb-source-badge {
-        background: rgba(6, 31, 82, 0.6); border: 1px solid var(--ws-border); border-radius: 6px;
-        padding: 4px 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; font-weight: 800;
-    }
-
-    .ws-bottom-ticker {
-        grid-column: 1 / 3; grid-row: 3; background: #020c22;
-        border-top: 2px solid var(--ws-cyan); display: flex; align-items: center;
-        overflow: hidden; position: relative; z-index: 1000;
-        contain: strict;
-    }
-    .ticker-lead-tag {
-        background: var(--ws-cherry); color: #fff; font-family: 'Space Grotesk', sans-serif;
-        font-size: clamp(0.75rem, 0.90cqw, 1.0rem); font-weight: 900; padding: 0 16px;
-        height: 100%; display: flex; align-items: center; letter-spacing: 1px; flex-shrink: 0;
-        box-shadow: 4px 0 15px rgba(0,0,0,0.9); z-index: 10;
-    }
-    .ticker-scroll-viewport {
-        flex: 1; overflow: hidden; white-space: nowrap; display: flex; align-items: center;
-        position: relative; height: 100%;
-    }
-    .ticker-smooth-track {
-        display: inline-flex; align-items: center; white-space: nowrap;
-        font-family: 'JetBrains Mono', monospace; font-size: clamp(0.85rem, 1.0cqw, 1.10rem);
-        font-weight: 800; color: #f8fafc; letter-spacing: 0.6px;
-        transform: translate3d(0, 0, 0);
-        will-change: transform;
-        backface-visibility: hidden;
-    }
-
-    .fs-toggle-btn {
-        position: fixed; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65);
-        border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 0.70rem; font-weight: 800;
-        padding: 3px 8px; border-radius: 4px; cursor: pointer; z-index: 99999;
-    }
+/* MOBILE */
+@media (max-width:900px) and (orientation:portrait),(max-width:600px){
+  .frame{aspect-ratio:auto;width:100vw;height:100vh;max-width:100vw;max-height:100vh;grid-template-rows:clamp(40px,6vh,54px) auto 1fr clamp(34px,5vh,44px);grid-template-columns:100%;grid-template-areas:"top" "side" "main" "tick"}
+  .radio-control{display:none}
+  .sync-badge{display:none}
+  .brand-sub{display:none}
+  .side{padding:6px 8px;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;gap:8px;overflow-x:auto;overflow-y:hidden;max-height:clamp(120px,18vh,150px);scrollbar-width:none}
+  .side::-webkit-scrollbar{display:none}
+  .side-head{display:none}
+  .station{flex-direction:row;align-items:center;gap:10px;padding:8px 10px;min-width:max-content;overflow-x:visible}
+  .station > div:first-child{display:flex;flex-direction:column;min-width:60px}
+  .station-name{font-size:16px}
+  .station-county{font-size:8px;margin-top:1px}
+  .station-icon-phrase{order:3;flex-direction:column;gap:2px;margin-top:0;align-items:flex-end}
+  .station-phrase{font-size:9px;max-width:100%;text-align:right}
+  .station-icon{width:28px;height:28px;order:-1}
+  .station-temp-row{margin:0}
+  .station-temp{font-size:32px;letter-spacing:-1px}
+  .station-temp-unit{font-size:12px}
+  .station-stats{display:grid;grid-template-columns:repeat(3,auto);gap:8px 12px;border-top:none;border-left:1px solid var(--border);padding-top:0;padding-left:10px;margin-left:6px}
+  .stat-label{font-size:6px;letter-spacing:0.5px}
+  .stat-value{font-size:10px}
+  .station-source-row{display:none}
+  .forecast-strip{display:none}
+  .grid-5x2{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;overflow-y:auto;height:100%;padding-right:2px}
+  .grid-4x5{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;overflow-y:auto;height:100%;padding-right:2px}
+  .bal-grid{grid-template-columns:1fr;grid-template-rows:auto auto auto;overflow-y:auto;height:100%;padding-right:2px}
+  .split{grid-template-columns:1fr;grid-template-rows:auto auto;overflow-y:auto;height:100%;padding-right:2px}
+  .hourly-chart{padding:8px 2px 2px 2px;gap:2px}
+  .hbar{min-height:6px}
+  .wind-full-list{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr)}
+  .wind-full-item{padding:8px}
+  .wind-rank{font-size:20px}
+  .wind-gust{font-size:20px}
+  .ai-page{padding:12px;gap:8px}
+  .ai-page-icon{font-size:36px}
+  .ai-page-title{font-size:16px}
+  .ai-page-value{font-size:26px}
+  .ai-page-text{font-size:11px;line-height:1.5}
+  .ai-page-footer{font-size:8px;gap:12px}
+  .station-row-name{min-width:70px;font-size:11px}
+  .station-row-temp{min-width:35px}
+  .station-row-source{display:none}
+}
 </style>
 </head>
 <body>
 
-<div class="unmute-overlay-banner" id="unmute-banner" onclick="startBroadcastExperience()">
-    <span>🔊 KATTINTS AZ ÉLŐ CHERRY WEATHER ADÁS ÉS HANG INDÍTÁSÁHOZ!</span>
+<div class="frame" id="frame">
+
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 100 100">
+        <circle cx="38" cy="65" r="24" fill="#ff1155"/>
+        <circle cx="34" cy="58" r="8" fill="#ff6688" opacity="0.55"/>
+        <circle cx="68" cy="68" r="20" fill="#cc0044"/>
+        <circle cx="65" cy="62" r="6" fill="#ff4477" opacity="0.55"/>
+        <path d="M38 41 C42 20,60 10,62 8" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M68 48 C66 32,63 18,62 8" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M62 8 C76 6,88 14,82 26 C72 26,64 16,62 8 Z" fill="#22c55e"/>
+      </svg>
+      <div>
+        <div class="brand-title">CHERRY <span>WEATHER</span></div>
+        <div class="brand-sub">MAGYARORSZÁG · 24/7 · OMSZ/HungaroMet</div>
+      </div>
+    </div>
+
+    <div class="radio-control">
+      <button class="radio-btn" onclick="toggleRadio()" id="radio-toggle">🔊 Hang</button>
+      <div class="radio-genres">
+        <button class="genre-btn active" data-genre="jazz" onclick="playStream('jazz')">🎷 Jazz</button>
+        <button class="genre-btn" data-genre="pop" onclick="playStream('pop')">🎤 Pop</button>
+        <button class="genre-btn" data-genre="classic" onclick="playStream('classic')">🎼 Classic</button>
+        <button class="genre-btn" data-genre="rock" onclick="playStream('rock')">🎸 Rock</button>
+        <button class="genre-btn" data-genre="latin" onclick="playStream('latin')">💃 Latin</button>
+      </div>
+      <div class="radio-now">
+        <span class="live-dot-small"></span>
+        <span id="radio-station-name">Válassz műfajt</span>
+      </div>
+    </div>
+
+    <div class="segment-indicator">
+      <span class="live-dot"></span>
+      <span id="seg-title">ORSZÁGOS CSAPADÉKRADAR</span>
+    </div>
+
+    <div class="top-right">
+      <div class="sync-badge" id="sync">SZINKRON · 05:00</div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <aside class="side">
+    <div class="side-head">
+      <span class="side-head-title">📍 Helyi állomás</span>
+      <span class="side-head-count" id="side-count">-- / 75</span>
+    </div>
+
+    <div class="station" id="station-card">
+      <div>
+        <div class="station-name" id="st-name">Betöltés…</div>
+        <div class="station-county" id="st-county">—</div>
+      </div>
+      <div class="station-icon-phrase">
+        <div class="station-icon" id="st-icon"></div>
+        <div class="station-phrase" id="st-phrase">Kapcsolódás…</div>
+      </div>
+      <div class="station-temp-row">
+        <span class="station-temp" id="st-temp">--</span>
+        <span class="station-temp-unit">°C</span>
+      </div>
+      <div class="station-stats">
+        <div class="stat"><span class="stat-label">Hőérzet</span><span class="stat-value" id="st-feels">--</span></div>
+        <div class="stat"><span class="stat-label">Szél / Lökés</span><span class="stat-value" id="st-wind">--</span></div>
+        <div class="stat"><span class="stat-label">Pára / Harmat</span><span class="stat-value" id="st-hum">--</span></div>
+        <div class="stat"><span class="stat-label">Légnyomás</span><span class="stat-value" id="st-press">--</span></div>
+        <div class="stat"><span class="stat-label">Látástáv</span><span class="stat-value" id="st-vis">--</span></div>
+        <div class="stat"><span class="stat-label">Csapadék</span><span class="stat-value" id="st-precip">--</span></div>
+      </div>
+      <div class="station-source-row">
+        <span>ADATFORRÁS</span>
+        <span id="st-source">--</span>
+      </div>
+      <div class="forecast-strip" id="st-3day"></div>
+    </div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Adatok betöltése…</div>
+      <div class="loading-sub">OMSZ / HungaroMet + Open-Meteo HPC · 75 állomás</div>
+    </div>
+
+    <div class="error-banner" id="err-banner">⚠ Kapcsolódási hiba</div>
+    <div class="err-detail" id="err-detail"></div>
+
+    <!-- 1. RADAR (ANIMÁLT ÉLŐ HUNGAROMET LOOP) -->
+    <div class="seg active" id="seg-radar">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">◎</span><span>ORSZÁGOS CSAPADÉKRADAR · ÉLŐ ANIMÁCIÓ</span></div>
+        <div class="seg-meta" id="radar-meta">ELMÚLT 60 PERC CSAPADÉKMOZGÁSA</div>
+      </div>
+      <div class="seg-body" style="display:flex;align-items:center;justify-content:center;background:#020610;border-radius:var(--radius);border:1px solid var(--border);position:relative;overflow:hidden;">
+        <div style="position:relative;height:100%;aspect-ratio:4/3;max-width:100%;display:flex;align-items:center;justify-content:center;">
+          <img id="omsz-radar-img" src="" alt="HUNGAROMET ÉLŐ RADAR" style="width:100%;height:100%;object-fit:fill;display:block;transition:opacity 0.2s ease;">
+          <div id="radar-cities-layer" style="position:absolute;inset:0;pointer-events:none;"></div>
+        </div>
+        <div class="map-hud">
+          <div class="map-hud-title" id="radar-hud-title">ÉLŐ RADARLEJÁTSZÁS</div>
+          <div class="map-hud-sub" id="radar-time">Kockák pufferelése…</div>
+          <div id="radar-timeline" style="display:flex;gap:3px;margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. MŰHOLD (ANIMÁLT ÉLŐ MTG FELHŐZET LOOP) -->
+    <div class="seg" id="seg-sat">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">◈</span><span>MŰHOLDAS FELHŐZET · FELHŐVONULÁS</span></div>
+        <div class="seg-meta" id="sat-meta">ELMÚLT 90 PERC MŰHOLDFELVÉTELEI</div>
+      </div>
+      <div class="seg-body" style="display:flex;align-items:center;justify-content:center;background:#020610;border-radius:var(--radius);border:1px solid var(--border);position:relative;overflow:hidden;">
+        <div style="position:relative;height:100%;aspect-ratio:4/3;max-width:100%;display:flex;align-items:center;justify-content:center;">
+          <img id="omsz-sat-img" src="" alt="HUNGAROMET ÉLŐ MŰHOLD" style="width:100%;height:100%;object-fit:fill;display:block;transition:opacity 0.2s ease;">
+        </div>
+        <div class="map-hud">
+          <div class="map-hud-title" id="sat-hud-title">FELHŐZET ANIMÁCIÓ</div>
+          <div class="map-hud-sub" id="sat-time">Kockák pufferelése…</div>
+          <div id="sat-timeline" style="display:flex;gap:3px;margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2/B. NOWCAST & RADAR PROGNÓZIS AI -->
+    <div class="seg" id="seg-ai-nowcast">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">⚡</span><span>NOWCAST · KÖVETKEZŐ 2 ÓRA VÁRHATÓ MOZGÁSA</span></div>
+        <div class="seg-meta">RADAR ÉS MŰHOLD PÁLYAELEMZÉS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-nowcast"></div></div>
+    </div>
+
+    <!-- 3. HOURLY -->
+    <div class="seg" id="seg-hourly">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">◐</span><span>KÖVETKEZŐ 24 ÓRA</span></div>
+        <div class="seg-meta" id="hourly-meta">BUDAPEST · HŐMÉRSÉKLETI PROFIL</div>
+      </div>
+      <div class="seg-body"><div class="hourly-chart" id="hourly-chart"></div></div>
+    </div>
+
+    <!-- 4. MAJOR CITIES -->
+    <div class="seg" id="seg-cities">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">▣</span><span>20 NAGYVÁROS · 3 NAPOS ELŐREJELZÉS</span></div>
+        <div class="seg-meta">Kiemelt magyar városok</div>
+      </div>
+      <div class="seg-body"><div class="grid-4x5" id="cities-grid"></div></div>
+    </div>
+
+    <!-- 5. TELEMETRY -->
+    <div class="seg" id="seg-telemetry">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">▤</span><span>ORSZÁGOS TELEMETRIA</span></div>
+        <div class="seg-meta" id="telem-meta">75 ÁLLOMÁS</div>
+      </div>
+      <div class="seg-body"><div class="grid-5x2" id="telem-grid"></div></div>
+    </div>
+
+    <!-- 6. STATION ANALYSES -->
+    <div class="seg" id="seg-station-analysis">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🔍</span><span>ÁLLOMÁS ELEMZÉSEK</span></div>
+        <div class="seg-meta" id="stat-ana-meta">75 ÁLLOMÁS · METEOROLÓGIAI ÉRTÉKELÉS</div>
+      </div>
+      <div class="seg-body"><div class="station-list" id="station-list"></div></div>
+    </div>
+
+    <!-- 7. BALATON -->
+    <div class="seg" id="seg-balaton">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">◉</span><span>BALATONI VIHARJELZÉS</span></div>
+        <div class="seg-meta">3 MEDENCE · TÓSZERTE</div>
+      </div>
+      <div class="seg-body"><div class="bal-grid" id="bal-grid"></div></div>
+    </div>
+
+    <!-- 8. POLLEN -->
+    <div class="seg" id="seg-pollen">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">❀</span><span>POLLENMONITORING</span></div>
+        <div class="seg-meta" id="pollen-meta">COPERNICUS CAMS · ORSZÁGOS TÖBBPONTOS MODELL</div>
+      </div>
+      <div class="seg-body">
+        <div class="split">
+          <div class="big-card cherry">
+            <div>
+              <div class="metric-desc" style="color:var(--cherry)">ORSZÁGOS VEZETŐ ALLERGÉN</div>
+              <div class="metric-huge" id="pollen-main" style="color:var(--cherry)">--</div>
+              <div class="metric-sub" style="margin-top:6px" id="pollen-lead-name">PARLAGFŰ · db/m³</div>
+            </div>
+            <div class="metric-sub" id="pollen-desc">A Copernicus CAMS légkörmegfigyelési modell területi rácspontjainak súlyozott országos átlaga (Dunántúl, Közép- és Kelet-Magyarország).</div>
+          </div>
+          <div class="big-card cyan">
+            <div class="metric-desc" style="color:var(--cyan);margin-bottom:12px">ORSZÁGOS SÚLYOZOTT ÁTLAGOK</div>
+            <div id="pollen-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. AQI -->
+    <div class="seg" id="seg-aqi">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">◇</span><span>LÉGMINŐSÉGI INDEX</span></div>
+        <div class="seg-meta">EAQI · EURÓPAI SKÁLA</div>
+      </div>
+      <div class="seg-body">
+        <div class="split">
+          <div class="big-card green">
+            <div>
+              <div class="metric-desc" style="color:var(--green)">EURÓPAI LÉGMINŐSÉGI INDEX</div>
+              <div class="metric-huge" id="aqi-main" style="color:var(--green)">--</div>
+              <div class="metric-desc" id="aqi-desc" style="color:var(--green)">TISZTA LEVEGŐ</div>
+            </div>
+            <div class="metric-sub">A szálló por (PM2.5, PM10), nitrogén-dioxid, ózon, CO és SO₂ koncentrációja alapján.</div>
+          </div>
+          <div class="big-card cyan">
+            <div class="metric-desc" style="color:var(--cyan);margin-bottom:12px">RÉSZECSKEMÉRLEG (µg/m³)</div>
+            <div id="aqi-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. SOLAR -->
+    <div class="seg" id="seg-solar">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">☀️</span><span>NAPSUGÁRZÁS & FOTOVOLTAIKA</span></div>
+        <div class="seg-meta" id="solar-meta">ORSZÁGOS TÖBBPONTOS TELEMETRIA</div>
+      </div>
+      <div class="seg-body">
+        <div class="split">
+          <div class="big-card amber">
+            <div>
+              <div class="metric-desc" style="color:var(--amber)">ORSZÁGOS GLOBÁLIS SUGÁRZÁS</div>
+              <div class="metric-huge" id="solar-main" style="color:var(--amber)">--</div>
+              <div class="metric-sub" style="margin-top:6px" id="solar-sub">W/m² · országos területi átlag</div>
+            </div>
+            <div class="metric-sub">A globális vízszintes besugárzás a fotovoltaikus energiatermelés kulcsmutatója, országos mérési pontok átlagolásával meghatározva.</div>
+          </div>
+          <div class="big-card cyan">
+            <div class="metric-desc" style="color:var(--cyan);margin-bottom:12px">SUGÁRZÁSI KOMPONENSEK</div>
+            <div id="solar-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. MARINE -->
+    <div class="seg" id="seg-marine">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🌊</span><span>BALATON VÍZÁLLAPOT & HULLÁMZÁS</span></div>
+        <div class="seg-meta" id="marine-meta">SIÓFOKI OBSZERVATÓRIUM + SMB MODELL</div>
+      </div>
+      <div class="seg-body">
+        <div class="split">
+          <div class="big-card cyan">
+            <div>
+              <div class="metric-desc" style="color:var(--cyan)">VÍZHŐMÉRSÉKLET (SIÓFOK)</div>
+              <div class="metric-huge" id="marine-temp" style="color:var(--cyan)">--</div>
+              <div class="metric-sub" style="margin-top:6px" id="marine-state">Nyugodt vízfelület</div>
+            </div>
+            <div class="metric-sub" id="marine-source" style="font-size:0.75rem;opacity:0.8;">HungaroMet Siófoki Obszervatórium + SMB dinamikus tavi modell</div>
+          </div>
+          <div class="big-card green">
+            <div class="metric-desc" style="color:var(--green);margin-bottom:12px">HULLÁMZÁS & TAVI SZÉLÁLLAPOT</div>
+            <div id="marine-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. WIND -->
+    <div class="seg" id="seg-wind">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">≈</span><span>LEGERŐSEBB SZÉLLÖKÉSEK</span></div>
+        <div class="seg-meta">TOP 5 ÁLLOMÁS · LÖKÉSÉRTÉKEK</div>
+      </div>
+      <div class="seg-body"><div class="wind-full" id="wind-full"></div></div>
+    </div>
+
+    <!-- 13. EXTREMES -->
+    <div class="seg" id="seg-extremes">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">◆</span><span>ORSZÁGOS SZÉLSŐÉRTÉKEK</span></div>
+        <div class="seg-meta">HŐMÉRSÉKLET & NYOMÁS</div>
+      </div>
+      <div class="seg-body">
+        <div class="split">
+          <div class="big-card cyan">
+            <div class="metric-desc" style="color:var(--cyan);margin-bottom:12px">LEGHIDEGEBB / LEGMELEGEBB</div>
+            <div id="temp-ext"></div>
+          </div>
+          <div class="big-card cherry">
+            <div class="metric-desc" style="color:var(--cherry);margin-bottom:12px">LÉGNYOMÁS & PÁRA</div>
+            <div id="press-ext"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 14-23. AI OLDALAK -->
+    <div class="seg" id="seg-ai-synoptic">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">●</span><span>METEOROLÓGIA · SZINOPTIKAI HELYZET</span></div>
+        <div class="seg-meta">1 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-synoptic"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-precip">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">💧</span><span>METEOROLÓGIA · CSAPADÉK ANALÍZIS</span></div>
+        <div class="seg-meta">2 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-precip"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-wind">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🌬️</span><span>METEOROLÓGIA · SZÉLMEZŐ ELEMZÉS</span></div>
+        <div class="seg-meta">3 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-wind"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-visibility">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">👁️</span><span>METEOROLÓGIA · LÁTÁS & KÖD</span></div>
+        <div class="seg-meta">4 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-visibility"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-pressure">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">⚖️</span><span>METEOROLÓGIA · LÉGNYOMÁS & FRONT</span></div>
+        <div class="seg-meta">5 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-pressure"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-health">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🌸</span><span>BIOMETEOROLÓGIA · EGÉSZSÉGÜGY</span></div>
+        <div class="seg-meta">6 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-health"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-balaton">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🌊</span><span>HIDROLÓGIA · BALATON & VIZEK</span></div>
+        <div class="seg-meta">7 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-balaton"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-traffic">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🛣️</span><span>KÖZLEKEDÉSMETEOROLÓGIA</span></div>
+        <div class="seg-meta">8 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-traffic"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-solar">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">☀️</span><span>FOTOVOLTAIKA · NAPENERGIA</span></div>
+        <div class="seg-meta">9 / 10 · ÉLŐ ANALÍZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-solar"></div></div>
+    </div>
+
+    <div class="seg" id="seg-ai-summary">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🎯</span><span>ORSZÁGOS ÖSSZEFOGLALÓ</span></div>
+        <div class="seg-meta">10 / 10 · ÉLŐ SZINTÉZIS</div>
+      </div>
+      <div class="seg-body"><div class="ai-page" id="ai-page-summary"></div></div>
+    </div>
+
+    <!-- 24. CSILLAGÁSZAT & HOLDFÁZIS (NYÍREGYHÁZA) -->
+    <div class="seg" id="seg-astro">
+      <div class="seg-header">
+        <div class="seg-title"><span class="seg-title-icon">🌙</span><span>CSILLAGÁSZAT & HOLDFÁZIS · NYÍREGYHÁZA</span></div>
+        <div class="seg-meta">47.9554° É, 21.7167° K · MEÉUS EFEMERIDA MODELL</div>
+      </div>
+      <div class="seg-body">
+        <div class="split">
+          <!-- BAL OLDAL: HOLDFÁZIS ÉS ÉGI GRAFIKA -->
+          <div class="big-card cyan" style="align-items:center;justify-content:center;gap:10px;text-align:center;">
+            <div id="astro-moon-svg" style="width:clamp(85px,10vw,140px);height:clamp(85px,10vw,140px);filter:drop-shadow(0 0 16px rgba(56,189,248,0.35));"></div>
+            <div>
+              <div class="metric-desc" id="astro-moon-phase" style="color:var(--cyan);font-size:clamp(12px,1.2vw,18px);margin-top:4px;">HOLD FÁZIS</div>
+              <div class="metric-huge" id="astro-moon-illum" style="color:#fff;font-size:clamp(26px,3.2vw,44px);margin:4px 0;">--%</div>
+              <div class="metric-sub" id="astro-moon-sub">Megvilágítottság · -- napos hold</div>
+            </div>
+            <div class="metric-sub" id="astro-countdown" style="color:var(--amber);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(10px,0.9vw,13px);border-top:1px solid var(--border);padding-top:8px;width:100%;">
+              SZÁMLÁLÓ INDÍTÁSA...
+            </div>
+          </div>
+
+          <!-- JOBB OLDAL: NAP & SZÜR KÜLETI TELEMETRIA -->
+          <div class="big-card amber">
+            <div class="metric-desc" style="color:var(--amber);margin-bottom:8px;">NAPJÁRÁS & SZÜRKÜLET (NYÍREGYHÁZA)</div>
+            <div id="astro-sun-bars"></div>
+            <div class="metric-sub" style="font-size:0.75rem;margin-top:6px;opacity:0.8;border-top:1px solid var(--border);padding-top:6px;">
+              A számítások a Jean Meeus csillagászati algoritmuson alapulnak, 100% offline valós időben.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="tick">
+    <div class="tick-lead">ÉLŐ</div>
+    <div class="tick-vp"><div class="tick-track" id="tick-track">Hazai állomások adatainak betöltése…</div></div>
+  </footer>
 </div>
 
-<button class="fs-toggle-btn" onclick="toggleTvFullscreen()">⛶ Teljes képernyő</button>
-
-<div class="tv-broadcast-frame" id="tv-frame">
-
-    <header class="ws-top-bar">
-        <div class="brand-wrap">
-            <!-- 🍒 CHERRY WEATHER VEKTOROS LOGÓ -->
-            <svg class="brand-logo-svg" viewBox="0 0 100 100">
-                <circle cx="38" cy="65" r="24" fill="#ff1155"/>
-                <circle cx="34" cy="58" r="8" fill="#ff6688" opacity="0.6"/>
-                <circle cx="68" cy="68" r="20" fill="#cc0044"/>
-                <circle cx="65" cy="62" r="6" fill="#ff4477" opacity="0.6"/>
-                <path d="M38 41 C 42 20, 60 10, 62 8" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                <path d="M68 48 C 66 32, 63 18, 62 8" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                <path d="M62 8 C 76 6, 88 14, 82 26 C 72 26, 64 16, 62 8 Z" fill="#10b981"/>
-            </svg>
-            <div class="brand-title-group">
-                <div class="brand-main-title">CHERRY <span>WEATHER</span></div>
-                <div class="brand-slogan-text">„Minden pillanat számít!”</div>
-            </div>
-        </div>
-
-        <div class="top-segment-wrap">
-            <span class="segment-live-dot"></span>
-            <span id="lbl-segment-title">MAGYARORSZÁG CSAPADÉKRADAR (DOPPLER)</span>
-        </div>
-
-        <div class="radio-suite-wrap">
-            <span style="font-size:0.75rem; margin-right:2px;">🇨🇭</span>
-            <button class="radio-genre-btn active-genre" onclick="changeRadioGenre('swisspop')">SWISS POP</button>
-            <button class="radio-genre-btn" onclick="changeRadioGenre('swissjazz')">SWISS JAZZ</button>
-            <button class="radio-genre-btn" onclick="changeRadioGenre('swissclassic')">CLASSIC</button>
-            <button class="radio-genre-btn" onclick="changeRadioGenre('chill')">CHILL</button>
-            <button class="radio-genre-btn" onclick="changeRadioGenre('dance')">DANCE</button>
-            <button class="radio-genre-btn" onclick="changeRadioGenre('retro')">80S</button>
-        </div>
-
-        <div class="top-right-meta">
-            <div class="top-sync-countdown" id="lbl-sync-countdown">SZINKRON: 03:00</div>
-            <div class="top-clock-text" id="lbl-live-clock">--:--:--</div>
-        </div>
-    </header>
-
-    <main class="ws-main-stage">
-        <!-- 🛰️ 1. SZEGMENS: RADAR -->
-        <div class="ws-stage-segment active-segment" id="seg-radar">
-            <div id="real-radar-map"></div>
-            <div class="radar-glass-hud">
-                <span class="radar-hud-title">● TŰPONTOS GPS RADARHÁLÓZAT</span>
-                <span class="radar-hud-sub" id="lbl-radar-time">RAINVIEWER MOZGÓ KOMPOZIT BETÖLTÉSE...</span>
-            </div>
-            <div class="radar-dbz-scale-box">
-                <span>CSAPADÉK (dBZ):</span>
-                <div class="dbz-bar"></div>
-                <div style="display:flex; justify-content:space-between; font-size:0.60rem; color:#94a3b8;">
-                    <span>Gyenge</span>
-                    <span>Zápor</span>
-                    <span>Jég</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🛰️ 2. SZEGMENS: TŰÉLES INFRAVÖRÖS MŰHOLDTÉRKÉP (HD TILE ALAPON) -->
-        <div class="ws-stage-segment" id="seg-satellite">
-            <div id="real-satellite-map"></div>
-            <div class="radar-glass-hud">
-                <span class="radar-hud-title">● KÁRPÁT-MEDENCE HD FELHŐMŰHOLD</span>
-                <span class="radar-hud-sub" id="lbl-sat-time">EUMETSAT / RAINVIEWER INFRAVÖRÖS KOMPOZIT</span>
-            </div>
-        </div>
-
-        <!-- 🌅 3. SZEGMENS: NAPI KRÓNIKA & HAJNALI VISSZATEKINTŐ -->
-        <div class="ws-stage-segment" id="seg-ai-chronicle">
-            <div class="ai-synoptic-card">
-                <div class="ai-syn-header">
-                    <div class="ai-syn-title"><span class="brand-pill-live">NAPI KRÓNIKA</span><span>HAJNALI SZÉLSŐÉRTÉKEK ÉS EDDIGI ESEMÉNYEK</span></div>
-                    <span style="font-family:'JetBrains Mono',monospace; color:var(--ws-cyan); font-weight:800;">HAJNALTÓL MOSTANÁIG</span>
-                </div>
-                <div class="ai-syn-body" id="ai-body-chronicle">A hajnali minimumok és a délelőtti melegedés adatainak kiértékelése...</div>
-                <div class="ai-syn-footer"><span>TELEMETRIA: 72 HAZAI MÉRŐPONT</span><span style="color:var(--ws-green);">● VALÓS CHERRY WEATHER FEED</span></div>
-            </div>
-        </div>
-
-        <!-- 📈 4. SZEGMENS: 24 ÓRÁS HŐMÉRSÉKLETI PROFIL -->
-        <div class="ws-stage-segment" id="seg-hourly-trend">
-            <div class="physics-box" style="height:100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <div class="ext-title">📈 24 ÓRÁS HŐMÉRSÉKLETI ÉS CSAPADÉK PROFIL</div>
-                        <div style="font-size:0.75rem; color:#94a3b8;">ÓRÁNKÉNTI ELŐREJELZÉS</div>
-                    </div>
-                    <div style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--ws-amber);">ÓRÁRÓL ÓRÁRA</div>
-                </div>
-
-                <div class="hourly-graph-strip" id="hourly-bars-container"></div>
-
-                <div style="display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#cbd5e1; border-top:1px solid rgba(255,255,255,0.1); padding-top:6px;">
-                    <span>SÁRGÁS OSZLOPOK: HŐMÉRSÉKLET (°C)</span>
-                    <span style="color:var(--ws-cyan);">METEOROLÓGIAI IDŐSOR</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🌸 5. SZEGMENS: KOPERNIKUSZ CAMS POLLENJELENTÉS -->
-        <div class="ws-stage-segment" id="seg-pollen">
-            <div class="aqi-chart-container">
-                <div class="aqi-gauge-card">
-                    <div>
-                        <div class="ext-title">🌸 ORSZÁGOS POLLENMONITORING</div>
-                        <div style="font-size:0.75rem; color:#94a3b8; margin:6px 0;">KOPERNIKUSZ CAMS EURÓPAI HÁLÓZAT</div>
-                        <div class="physics-stat-val" id="pollen-main-ragweed" style="color:var(--ws-cherry);">--</div>
-                        <div style="font-size:1.1rem; font-weight:800; color:var(--ws-cyan);" id="pollen-main-desc">PARLAGFŰ KONCENTRÁCIÓ</div>
-                    </div>
-                    <div style="font-size:0.75rem; color:#cbd5e1; line-height:1.5;">
-                        A parlagfű és fűfélék valós légköri részecskesűrűsége Magyarország légterében, mérve részecske / m³ egységben.
-                    </div>
-                </div>
-
-                <div class="aqi-bar-card">
-                    <div class="ext-title">📊 ALLERGÉN RÉSZECSKEMÉRLEG</div>
-                    <div style="display:flex; flex-direction:column; gap:10px; margin:auto 0;">
-                        <div class="aqi-pollutant-row">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                                <span>PARLAGFŰ (RAGWEED)</span>
-                                <strong id="val-pollen-ragweed">-- db/m³</strong>
-                            </div>
-                            <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-ragweed" style="width:10%; background:var(--ws-cherry);"></div></div>
-                        </div>
-                        <div class="aqi-pollutant-row">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                                <span>PÁZSITFŰFÉLÉK (GRASS)</span>
-                                <strong id="val-pollen-grass">-- db/m³</strong>
-                            </div>
-                            <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-grass" style="width:25%; background:var(--ws-amber);"></div></div>
-                        </div>
-                        <div class="aqi-pollutant-row">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                                <span>NYÍRFA (BIRCH)</span>
-                                <strong id="val-pollen-birch">-- db/m³</strong>
-                            </div>
-                            <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-birch" style="width:5%; background:var(--ws-green);"></div></div>
-                        </div>
-                        <div class="aqi-pollutant-row">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                                <span>ÜRÖM (MUGWORT)</span>
-                                <strong id="val-pollen-mugwort">-- db/m³</strong>
-                            </div>
-                            <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pollen-mugwort" style="width:15%; background:var(--ws-cyan);"></div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 📊 6. SZEGMENS: EAQI LÉGMINŐSÉG -->
-        <div class="ws-stage-segment" id="seg-cams-aqi">
-            <div class="aqi-chart-container">
-                <div class="aqi-gauge-card">
-                    <div>
-                        <div class="ext-title">🍃 LÉGMINŐSÉGI INDEX (EAQI)</div>
-                        <div style="font-size:0.75rem; color:#94a3b8; margin:6px 0;">EURÓPAI KOPERNIKUSZ CAMS HÁLÓZAT</div>
-                        <div class="physics-stat-val" id="aqi-main-val">-- EAQI</div>
-                        <div style="font-size:1.1rem; font-weight:800; color:var(--ws-green);" id="aqi-main-desc">TISZTA LEVEGŐ</div>
-                    </div>
-                    <div style="font-size:0.75rem; color:#cbd5e1; line-height:1.5;">
-                        A szálló por és nitrogén-dioxid koncentrációja alapján számított hivatalos európai légminőségi osztályzat.
-                    </div>
-                </div>
-
-                <div class="aqi-bar-card">
-                    <div class="ext-title">📊 RÉSZECSKEMÉRLEG (µG / M³)</div>
-                    <div style="display:flex; flex-direction:column; gap:10px; margin:auto 0;">
-                        <div class="aqi-pollutant-row">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                                <span>FINOM SZÁLLÓ POR (PM2.5)</span>
-                                <strong id="val-pm25">-- µg/m³</strong>
-                            </div>
-                            <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pm25" style="width:20%; background:var(--ws-green);"></div></div>
-                        </div>
-                        <div class="aqi-pollutant-row">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                                <span>SZÁLLÓ POR (PM10)</span>
-                                <strong id="val-pm10">-- µg/m³</strong>
-                            </div>
-                            <div class="aqi-bar-track"><div class="aqi-bar-fill" id="bar-pm10" style="width:30%; background:var(--ws-cyan);"></div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ⚖️ FIZIKAI TELEMETRIÁK -->
-        <div class="ws-stage-segment" id="seg-phy-pressure">
-            <div class="physics-two-col">
-                <div class="physics-box">
-                    <div>
-                        <div class="ext-title">⚖️ TÉRSÉGI LÉGNYOMÁS & BAROMETRIKUS HINTA</div>
-                        <div style="font-size:0.75rem; color:#94a3b8; margin:6px 0;">NYUGAT-KELET LÉGNYOMÁS-KÜLÖNBSÉG</div>
-                        <div class="physics-stat-val" id="phy-p-delta">-- hPa</div>
-                        <div style="font-size:0.80rem; color:#cbd5e1; margin-top:8px;" id="phy-p-desc">Barometrikus gradiens analízise...</div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:6px;" id="phy-p-extremes"></div>
-                </div>
-                <div class="physics-box">
-                    <div class="ext-title">🧭 FRONTHELYZET & IZOBÁR ANALÍZIS</div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:#f1f5f9; margin:auto 0;" id="phy-p-text">
-                        A légnyomás stabilizálódása jelzi a légtömegek stabilitását. Ha a gradiens meghaladja a 4 hPa-t az ország két széle között, a frontális szél azonnal megerősödik.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ws-stage-segment" id="seg-phy-humidity">
-            <div class="physics-two-col">
-                <div class="physics-box">
-                    <div>
-                        <div class="ext-title">💧 LÉGNEDVESSÉG & HARMATPONT-DEFICIT</div>
-                        <div style="font-size:0.75rem; color:#94a3b8; margin:6px 0;">LEGMAGASABB RELATÍV PÁRATARTALOM</div>
-                        <div class="physics-stat-val" id="phy-h-val">-- %</div>
-                        <div style="font-size:0.85rem; color:var(--ws-cyan); font-weight:800;" id="phy-h-station">--</div>
-                    </div>
-                    <div style="font-size:0.75rem; color:#cbd5e1;" id="phy-h-fogrisk">Köd- és párásság kockázat számítása...</div>
-                </div>
-                <div class="physics-box">
-                    <div class="ext-title">🌫️ KÖD- ÉS TELÍTETTSÉGI MONITORING</div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:#f1f5f9; margin:auto 0;" id="phy-h-analysis">
-                        Ahol a mért léghőmérséklet megközelíti a harmatpontot, a légkör telítetté válik, és talajmenti köd, pára vagy zúzmara alakul ki.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ws-stage-segment" id="seg-phy-visibility">
-            <div class="physics-two-col">
-                <div class="physics-box">
-                    <div class="ext-title">👁️ LÁTÁSTÁVOLSÁG TOPLISTA (MÉRT KM)</div>
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:8px;">LEGKORLÁTOZOTTABB LÁTÁSI VISZONYOK</div>
-                    <div id="phy-vis-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-                </div>
-                <div class="physics-box">
-                    <div class="ext-title">🛣️ TRANZITFOLYOSÓK ÉS SZTRÁDÁK (M0-M7)</div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:#f1f5f9; margin:auto 0;" id="phy-vis-advice">
-                        A látási viszonyok országszerte közvetlenül befolyásolják a megengedett biztonságos haladási sebességet a gyorsforgalmi utakon.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🤖 AI METEOROLÓGUS LAPOK -->
-        <div class="ws-stage-segment" id="seg-ai-synoptic">
-            <div class="ai-synoptic-card">
-                <div class="ai-syn-header">
-                    <div class="ai-syn-title"><span class="brand-pill-live">AI METEOROLÓGUS</span><span>SZINOPTIKAI HELYZET & LÉGTÖMEGEK</span></div>
-                    <span style="font-family:'JetBrains Mono',monospace; color:var(--ws-cyan); font-weight:800;">1 / 10. LAP</span>
-                </div>
-                <div class="ai-syn-body" id="ai-body-synoptic">Valós szinoptikus adatok feldolgozása a szerverről...</div>
-                <div class="ai-syn-footer"><span>MODELL: AI ORSZÁGOS ELEMZŐ</span><span style="color:var(--ws-green);">● VALÓS CHERRY WEATHER FEED</span></div>
-            </div>
-        </div>
-
-        <div class="ws-stage-segment" id="seg-ai-radarPrecip">
-            <div class="ai-synoptic-card">
-                <div class="ai-syn-header">
-                    <div class="ai-syn-title"><span class="brand-pill-live">AI METEOROLÓGUS</span><span>CSAPADÉKTEVÉKENYSÉG & CELLAANALÍZIS</span></div>
-                    <span style="font-family:'JetBrains Mono',monospace; color:var(--ws-cyan); font-weight:800;">2 / 10. LAP</span>
-                </div>
-                <div class="ai-syn-body" id="ai-body-radarPrecip">Valós radar- és távolságadatok kiszámítása...</div>
-                <div class="ai-syn-footer"><span>MODELL: AI ORSZÁGOS ELEMZŐ</span><span style="color:var(--ws-green);">● TÁVOLSÁGI RADAR INTEGRÁCIÓ</span></div>
-            </div>
-        </div>
-
-        <div class="ws-stage-segment" id="seg-ai-wind">
-            <div class="ai-synoptic-card">
-                <div class="ai-syn-header">
-                    <div class="ai-syn-title"><span class="brand-pill-live">AI METEOROLÓGUS</span><span>SZÉLMEZŐ & VIHAROS LÖKÉSEK</span></div>
-                    <span style="font-family:'JetBrains Mono',monospace; color:var(--ws-cyan); font-weight:800;">3 / 10. LAP</span>
-                </div>
-                <div class="ai-syn-body" id="ai-body-wind">Áramlási viszonyok kiértékelése...</div>
-                <div class="ai-syn-footer"><span>MODELL: AI ORSZÁGOS ELEMZŐ</span><span style="color:var(--ws-green);">● VALÓS CHERRY WEATHER FEED</span></div>
-            </div>
-        </div>
-
-        <div class="ws-stage-segment" id="seg-ai-traffic">
-            <div class="ai-synoptic-card">
-                <div class="ai-syn-header">
-                    <div class="ai-syn-title"><span class="brand-pill-live">AI METEOROLÓGUS</span><span>KÖZLEKEDÉSMETEOROLÓGIA & SZTRÁDÁK</span></div>
-                    <span style="font-family:'JetBrains Mono',monospace; color:var(--ws-cyan); font-weight:800;">9 / 10. LAP</span>
-                </div>
-                <div class="ai-syn-body" id="ai-body-traffic">M0, M1, M3, M5, M7 pályaállapotok elemzése...</div>
-                <div class="ai-syn-footer"><span>MODELL: AI ORSZÁGOS ELEMZŐ</span><span style="color:var(--ws-green);">● VALÓS CHERRY WEATHER FEED</span></div>
-            </div>
-        </div>
-
-        <!-- 📊 TELEMETRIA LAPOK -->
-        <div class="ws-stage-segment" id="seg-telemetry-1"><div class="telemetry-grid-10" id="grid-telemetry-1"></div></div>
-        <div class="ws-stage-segment" id="seg-city-10"><div class="city-deep-forecast-10" id="city-deep-forecast-10"></div></div>
-        <div class="ws-stage-segment" id="seg-extremes">
-            <div class="extremes-grid-wrap">
-                <div class="wind-top-card">
-                    <div class="ext-title">🌪️ LEGERŐSEBB SZÉLLÖKÉSEK (TOP 5)</div>
-                    <div id="wind-top-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-                </div>
-                <div class="extremes-card">
-                    <div class="ext-title">❄️🔥 HŐMÉRSÉKLETI SZÉLSŐÉRTÉKEK</div>
-                    <div id="temp-extremes-box" style="display:flex; flex-direction:column; gap:14px; margin:auto 0;"></div>
-                </div>
-            </div>
-        </div>
-        <div class="ws-stage-segment" id="seg-balaton"><div class="balaton-stage-wrap" id="balaton-lakes-grid"></div></div>
-    </main>
-
-    <!-- 3. JOBB OLDALI TELEMETRIA -->
-    <aside class="ws-sidebar">
-        <div class="sb-telemetry-header">
-            <span class="sb-telemetry-title">📍 HELYI TELEMETRIA</span>
-            <span style="font-family:'JetBrains Mono',monospace; font-size:0.70rem; color:#fff;" id="sb-counter-pill">-- / --</span>
-        </div>
-
-        <div class="sb-station-card" id="sb-station-card">
-            <div class="sb-station-top">
-                <div>
-                    <div class="sb-city-big" id="sb-city-name">ADATOK BETÖLTÉSE</div>
-                    <div class="sb-county-tag" id="sb-county-name">MAGYARORSZÁG</div>
-                </div>
-                <div class="sb-phrase-txt" id="sb-phrase-txt">Kapcsolódás a hálózathoz...</div>
-            </div>
-
-            <div class="sb-main-measure-row">
-                <span class="sb-temp-giant" id="sb-temp-giant">--°</span>
-                <div class="sb-icon-wrap" id="sb-icon-wrap"></div>
-            </div>
-
-            <div class="sb-rich-metrics">
-                <div><span>HŐÉRZET:</span><strong id="m-feels">--°C</strong></div>
-                <div><span>SZÉL & LÖKÉS:</span><strong id="m-wind">-- km/h</strong></div>
-                <div><span>PÁRA & HARMAT:</span><strong id="m-humidity">--% · --°C</strong></div>
-                <div><span>LÉGNYOMÁS:</span><strong id="m-pressure">-- hPa</strong></div>
-                <div><span>UV-INDEX:</span><strong id="m-uv">--</strong></div>
-                <div><span>LÁTÁSTÁVOLSÁG:</span><strong id="m-visibility">-- km</strong></div>
-            </div>
-
-            <div style="font-size:0.65rem; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-top:2px;">KÖVETKEZŐ 3 NAP HELYBEN:</div>
-            <div class="sb-local-3day-strip" id="sb-local-3day-strip"></div>
-        </div>
-
-        <div class="sb-source-badge">
-            <span>72 HAZAI ÁLLOMÁS + CAMS POLLEN</span>
-            <span style="color:var(--ws-green);">● CHERRY WEATHER</span>
-        </div>
-    </aside>
-
-    <!-- 📜 4. ALSÓ TICKER -->
-    <footer class="ws-bottom-ticker">
-        <div class="ticker-lead-tag">ÉLŐ MET-JELENTÉS</div>
-        <div class="ticker-scroll-viewport" id="ticker-viewport">
-            <div class="ticker-smooth-track" id="ticker-smooth-track">
-                Hazai állomások valós adatainak letöltése a Cherry Weather adásmotorból...
-            </div>
-        </div>
-    </footer>
-
-</div>
+<button class="fs-btn" onclick="toggleFS()" id="fs-btn">⛶ TELJES KÉPERNYŐ</button>
 
 <script>
-    const BROADCAST_API_URL = "https://weatherscantv.androjid21.workers.dev/api/weatherscan/live";
+/* ============================================================
+   ZENEI STREAM-EK – 5 műfaj
+   ============================================================ */
+const RADIO_STREAMS = {
+  jazz:    [{ name: "Radio Swiss Jazz",    url: "https://stream.srg-ssr.ch/m/rsj/mp3_128" }],
+  pop:     [{ name: "Radio Swiss Pop",     url: "https://stream.srg-ssr.ch/m/rsp/mp3_128" }],
+  classic: [{ name: "Radio Swiss Classic", url: "https://stream.srg-ssr.ch/m/rsc_de/mp3_128" }],
+  rock:    [{ name: "SRF 3 Rock & Pop",    url: "https://stream.srg-ssr.ch/m/srf3/mp3_128" }],
+  latin:   [{ name: "Costa Del Mar (Chill)", url: "https://radio4.cdm-radio.com:8020/stream-mp3-Chill" }]
+};
 
-    const RADIO_STREAMS = {
-        swisspop: "https://stream.srg-ssr.ch/m/rsp/mp3_128",
-        swissjazz: "https://stream.srg-ssr.ch/m/rsj/mp3_128",
-        swissclassic: "https://stream.srg-ssr.ch/m/rsc_de/mp3_128",
-        chill: "https://ice2.somafm.com/groovesalad-128-mp3",
-        dance: "https://ice4.somafm.com/beatblender-128-mp3",
-        retro: "https://ice6.somafm.com/u80s-128-mp3"
+const currentAudio = new Audio();
+currentAudio.volume = 0.5;
+currentAudio.crossOrigin = "anonymous";
+currentAudio.preload = "none";
+let currentGenre = "jazz";
+let audioStarted = false;
+let radioRetryTimer = null;
+
+function setActiveGenreButton(g){
+  document.querySelectorAll(".genre-btn").forEach(b => b.classList.toggle("active", b.dataset.genre === g));
+}
+function updateRadioLabel(n){ const el = document.getElementById("radio-station-name"); if (el) el.textContent = n; }
+function playStream(genre){
+  const streams = RADIO_STREAMS[genre]; if (!streams || !streams.length) return;
+  currentGenre = genre;
+  const station = streams[0];
+  setActiveGenreButton(genre);
+  updateRadioLabel(station.name + " · csatlakozás…");
+  try {
+    currentAudio.pause();
+    currentAudio.src = station.url;
+    currentAudio.load();
+    const p = currentAudio.play();
+    if (p && p.then){
+      p.then(() => {
+        audioStarted = true;
+        updateRadioLabel(station.name);
+        document.getElementById("radio-toggle").textContent = "⏸ Szünet";
+        if (radioRetryTimer) { clearTimeout(radioRetryTimer); radioRetryTimer = null; }
+      }).catch(err => {
+        console.warn("Audio hiba:", err.message);
+        updateRadioLabel(station.name + " · újrapróbálkozás");
+        if (radioRetryTimer) clearTimeout(radioRetryTimer);
+        radioRetryTimer = setTimeout(() => playStream(genre), 4000);
+      });
+    }
+  } catch (e){ console.warn("Audio kivétel:", e); }
+}
+function toggleRadio(){
+  if (!audioStarted){ playStream(currentGenre); return; }
+  if (currentAudio.paused){
+    currentAudio.play().catch(() => {});
+    document.getElementById("radio-toggle").textContent = "⏸ Szünet";
+  } else {
+    currentAudio.pause();
+    document.getElementById("radio-toggle").textContent = "🔊 Hang";
+  }
+}
+
+/* ============================================================
+   KONFIGURÁCIÓ
+   ============================================================ */
+const API = "https://weatherscantv.androjid21.workers.dev/api/weatherscan/live";
+let DATA = null, STATIONS = [];
+let sideIdx = 0, segIdx = 0, teleIdx = 0, stationIdx = 0;
+let syncSec = 300, retryDelay = 5000;
+
+const SEGS = [
+  { id: "seg-radar",             title: "ORSZÁGOS CSAPADÉKRADAR (ANIMÁLT)" },
+  { id: "seg-sat",               title: "MŰHOLDAS FELHŐVONULÁS (ANIMÁLT)" },
+  { id: "seg-ai-nowcast",        title: "NOWCAST · CELLAMOZGÁS & VÁRHATÓ CSAPADÉK" },
+  { id: "seg-hourly",            title: "KÖVETKEZŐ 24 ÓRA" },
+  { id: "seg-ai-synoptic",       title: "SZINOPTIKAI HELYZET" },
+  { id: "seg-cities",            title: "20 NAGYVÁROS ELŐREJELZÉSE" },
+  { id: "seg-telemetry",         title: "ORSZÁGOS TELEMETRIA" },
+  { id: "seg-ai-precip",         title: "CSAPADÉK ANALÍZIS" },
+  { id: "seg-station-analysis",  title: "ÁLLOMÁS ELEMZÉSEK" },
+  { id: "seg-balaton",           title: "BALATONI VIHARJELZÉS" },
+  { id: "seg-ai-balaton",        title: "BALATONI HIDROLÓGIA" },
+  { id: "seg-marine",            title: "BALATON VÍZÁLLAPOT" },
+  { id: "seg-pollen",            title: "POLLENMONITORING" },
+  { id: "seg-ai-health",         title: "EGÉSZSÉGÜGY & ALLERGIA" },
+  { id: "seg-aqi",               title: "LÉGMINŐSÉG" },
+  { id: "seg-solar",             title: "NAPSUGÁRZÁS" },
+  { id: "seg-ai-solar",          title: "NAPENERGIA HOZAM" },
+  { id: "seg-wind",              title: "SZÉLLÖKÉSEK TOPLISTA" },
+  { id: "seg-ai-wind",           title: "SZÉLMEZŐ ELEMZÉS" },
+  { id: "seg-extremes",          title: "SZÉLSŐÉRTÉKEK" },
+  { id: "seg-ai-visibility",     title: "LÁTÁSTÁVOLSÁG & KÖD" },
+  { id: "seg-ai-pressure",       title: "LÉGNYOMÁS & FRONT" },
+  { id: "seg-ai-traffic",        title: "KÖZLEKEDÉSBIZTONSÁG" },
+  { id: "seg-ai-summary",        title: "ORSZÁGOS ÖSSZEFOGLALÓ" },
+  { id: "seg-astro",             title: "CSILLAGÁSZAT & HOLDFÁZIS · NYÍREGYHÁZA" }
+];
+
+/* ============================================================
+   WEATHER ICONS
+   ============================================================ */
+function icon(name){
+  const c = {
+    "clear-day":`<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="12" fill="#fbbf24"/><g stroke="#fbbf24" stroke-width="3" stroke-linecap="round"><line x1="32" y1="6" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="58"/><line x1="6" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="58" y2="32"/><line x1="14" y1="14" x2="19" y2="19"/><line x1="45" y1="45" x2="50" y2="50"/><line x1="14" y1="50" x2="19" y2="45"/><line x1="45" y1="19" x2="50" y2="14"/></g></svg>`,
+    "clear-night":`<svg viewBox="0 0 64 64"><path d="M42 8a22 22 0 1 0 14 30 18 18 0 0 1-14-30z" fill="#38bdf8"/></svg>`,
+    "partly-day":`<svg viewBox="0 0 64 64"><circle cx="22" cy="22" r="10" fill="#fbbf24"/><g stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="4" x2="22" y2="8"/><line x1="4" y1="22" x2="8" y2="22"/><line x1="9" y1="9" x2="12" y2="12"/></g><path d="M20 50h26a10 10 0 0 0 1-19.9A14 14 0 0 0 21 28a10 10 0 0 0-1 22z" fill="#cbd5e1"/></svg>`,
+    "partly-night":`<svg viewBox="0 0 64 64"><path d="M28 6a12 12 0 0 0 12 15 10 10 0 0 1-12-15z" fill="#38bdf8"/><path d="M20 50h26a10 10 0 0 0 1-19.9A14 14 0 0 0 21 28a10 10 0 0 0-1 22z" fill="#94a3b8"/></svg>`,
+    "cloudy":`<svg viewBox="0 0 64 64"><path d="M18 46h30a10 10 0 0 0 1-19.9A14 14 0 0 0 22 22a9 9 0 0 0-4 24z" fill="#64748b"/></svg>`,
+    "fog":`<svg viewBox="0 0 64 64"><g stroke="#94a3b8" stroke-width="3.5" stroke-linecap="round"><line x1="8" y1="20" x2="56" y2="20"/><line x1="12" y1="30" x2="52" y2="30"/><line x1="10" y1="40" x2="54" y2="40"/><line x1="14" y1="50" x2="50" y2="50"/></g></svg>`,
+    "drizzle":`<svg viewBox="0 0 64 64"><path d="M18 40h28a10 10 0 0 0 1-19.9A14 14 0 0 0 22 16a9 9 0 0 0-4 24z" fill="#94a3b8"/><g stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="46" x2="20" y2="52"/><line x1="34" y1="46" x2="32" y2="52"/><line x1="46" y1="46" x2="44" y2="52"/></g></svg>`,
+    "rain":`<svg viewBox="0 0 64 64"><path d="M18 40h28a10 10 0 0 0 1-19.9A14 14 0 0 0 22 16a9 9 0 0 0-4 24z" fill="#64748b"/><g stroke="#38bdf8" stroke-width="3" stroke-linecap="round"><line x1="22" y1="44" x2="18" y2="54"/><line x1="34" y1="44" x2="30" y2="54"/><line x1="46" y1="44" x2="42" y2="54"/></g></svg>`,
+    "heavy-rain":`<svg viewBox="0 0 64 64"><path d="M18 38h28a10 10 0 0 0 1-19.9A14 14 0 0 0 22 14a9 9 0 0 0-4 24z" fill="#475569"/><g stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round"><line x1="20" y1="42" x2="16" y2="56"/><line x1="30" y1="42" x2="26" y2="56"/><line x1="40" y1="42" x2="36" y2="56"/><line x1="50" y1="42" x2="46" y2="56"/></g></svg>`,
+    "showers-day":`<svg viewBox="0 0 64 64"><circle cx="18" cy="18" r="8" fill="#fbbf24"/><path d="M20 40h26a10 10 0 0 0 1-19.9A14 14 0 0 0 22 18a9 9 0 0 0-2 22z" fill="#94a3b8"/><g stroke="#38bdf8" stroke-width="3" stroke-linecap="round"><line x1="26" y1="44" x2="22" y2="54"/><line x1="38" y1="44" x2="34" y2="54"/></g></svg>`,
+    "showers-night":`<svg viewBox="0 0 64 64"><path d="M24 4a10 10 0 0 0 10 12 8 8 0 0 1-10-12z" fill="#38bdf8"/><path d="M20 40h26a10 10 0 0 0 1-19.9A14 14 0 0 0 22 18a9 9 0 0 0-2 22z" fill="#64748b"/><g stroke="#38bdf8" stroke-width="3" stroke-linecap="round"><line x1="26" y1="44" x2="22" y2="54"/><line x1="38" y1="44" x2="34" y2="54"/></g></svg>`,
+    "snow":`<svg viewBox="0 0 64 64"><path d="M18 40h28a10 10 0 0 0 1-19.9A14 14 0 0 0 22 16a9 9 0 0 0-4 24z" fill="#94a3b8"/><g stroke="#e0f2fe" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="46" x2="22" y2="54"/><line x1="18" y1="50" x2="26" y2="50"/><line x1="42" y1="46" x2="42" y2="54"/><line x1="38" y1="50" x2="46" y2="50"/></g></svg>`,
+    "thunder":`<svg viewBox="0 0 64 64"><path d="M18 38h28a10 10 0 0 0 1-19.9A14 14 0 0 0 22 14a9 9 0 0 0-4 24z" fill="#475569"/><polygon points="34 30 24 46 32 46 28 60 44 42 34 42" fill="#fbbf24"/></svg>`
+  };
+  return c[name] || c["cloudy"];
+}
+
+/* ============================================================
+   TICKER
+   ============================================================ */
+let tickOffset = 0, tickLast = performance.now();
+function tickStep(now){
+  const dt = Math.min((now - tickLast) / 1000, 0.1);
+  tickLast = now;
+  const el = document.getElementById("tick-track");
+  if (!el) { requestAnimationFrame(tickStep); return; }
+  tickOffset -= 42 * dt;
+  const w = el.scrollWidth / 2;
+  if (w > 0 && -tickOffset >= w) tickOffset = 0;
+  el.style.transform = `translate3d(${tickOffset}px,0,0)`;
+  requestAnimationFrame(tickStep);
+}
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+function tickClock(){
+  const now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleTimeString("hu-HU", { timeZone: "Europe/Budapest" });
+  syncSec--;
+  if (syncSec <= 0){ syncSec = 300; fetchData(); }
+  const m = Math.floor(syncSec / 60);
+  const s = syncSec % 60;
+  document.getElementById("sync").textContent = `SZINKRON · 0${m}:${String(s).padStart(2,"0")}`;
+  renderAstro(); // <-- Valós idejű másodperc-számláló frissítés
+}
+
+/* ============================================================
+   DATA FETCH
+   ============================================================ */
+async function fetchData(){
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15000);
+    const r = await fetch(API, { signal: ctrl.signal });
+    clearTimeout(tid);
+    if (!r.ok){
+      const txt = await r.text().catch(() => "");
+      throw new Error(`HTTP ${r.status} · ${txt.substring(0, 300)}`);
+    }
+    const j = await r.json();
+    if (j.error) throw new Error(j.message || "Worker hiba");
+    if (!j.stations || !j.stations.length) {
+      throw new Error(`Üres állomáslista.`);
+    }
+    DATA = j; STATIONS = j.stations; retryDelay = 5000;
+    document.getElementById("loading").classList.add("hide");
+    document.getElementById("err-banner").classList.remove("show");
+    document.getElementById("err-detail").classList.remove("show");
+    renderAll();
+  } catch (e){
+    console.error("Fetch hiba:", e);
+    retryDelay = Math.min(retryDelay * 1.6, 30000);
+    if (!DATA || !STATIONS.length) {
+      document.getElementById("err-banner").textContent = `⚠ Hiba · Újrapróbálkozás...`;
+      document.getElementById("err-banner").classList.add("show");
+      document.getElementById("err-detail").textContent = String(e.message || e).substring(0, 300);
+      document.getElementById("err-detail").classList.add("show");
+    }
+    setTimeout(fetchData, retryDelay);
+  }
+}
+
+/* ============================================================
+   CSILLAGÁSZATI ÉS HOLDFÁZIS MOTOR · NYÍREGYHÁZA
+   Szélesség: 47.9554° N, Hosszúság: 21.7167° E
+   100% API-mentes Jean Meeus & NOAA algoritmus
+   ============================================================ */
+const NYIREGYHAZA_COORDS = { lat: 47.9554, lon: 21.7167 };
+
+// 1. Holdfázis és megvilágítottság számítás
+function getNyiregyhazaMoon(date) {
+  const refEpoch = Date.UTC(2000, 0, 6, 18, 14, 0);
+  const synodicMonth = 29.53058867 * 86400000;
+  const diff = date.getTime() - refEpoch;
+  const phaseRatio = ((diff % synodicMonth) + synodicMonth) % synodicMonth / synodicMonth;
+  
+  const illumPct = Math.round((1 - Math.cos(2 * Math.PI * phaseRatio)) / 2 * 100);
+  const moonAge = (phaseRatio * 29.53058867).toFixed(1);
+
+  let phaseName = "Újhold";
+  if (phaseRatio >= 0.03 && phaseRatio < 0.22) phaseName = "Növekvő sarló";
+  else if (phaseRatio >= 0.22 && phaseRatio < 0.28) phaseName = "Első negyed";
+  else if (phaseRatio >= 0.28 && phaseRatio < 0.47) phaseName = "Növekvő hold";
+  else if (phaseRatio >= 0.47 && phaseRatio < 0.53) phaseName = "Telihold";
+  else if (phaseRatio >= 0.53 && phaseRatio < 0.72) phaseName = "Fogyó hold";
+  else if (phaseRatio >= 0.72 && phaseRatio < 0.78) phaseName = "Utolsó negyed";
+  else if (phaseRatio >= 0.78 && phaseRatio < 0.97) phaseName = "Fogyó sarló";
+
+  const isWaxing = phaseRatio < 0.5;
+  const cosP = Math.cos(2 * Math.PI * phaseRatio);
+  const rx = Math.abs(40 * cosP);
+  const sweepTerminator = (phaseRatio < 0.25 || phaseRatio >= 0.75) ? 0 : 1;
+  const outerSweep = isWaxing ? 1 : 0;
+  
+  const litPath = `M 50 10 A 40 40 0 0 ${outerSweep} 50 90 A ${rx} 40 0 0 ${sweepTerminator} 50 10 Z`;
+
+  const svg = `
+    <svg viewBox="0 0 100 100" style="width:100%;height:100%;">
+      <circle cx="50" cy="50" r="40" fill="#0b172e" stroke="#334155" stroke-width="2"/>
+      <path d="${litPath}" fill="#f8fafc" opacity="0.95"/>
+    </svg>
+  `;
+
+  return { illumPct, moonAge, phaseName, svg, phaseRatio };
+}
+
+// 2. Napkelte, Napnyugta, Szürkület és Napmagasság
+function getNyiregyhazaSun(date) {
+  const lat = NYIREGYHAZA_COORDS.lat;
+  const lon = NYIREGYHAZA_COORDS.lon;
+  const rad = Math.PI / 180;
+  const deg = 180 / Math.PI;
+
+  function getJulianDay(d) {
+    return (d.getTime() / 86400000) + 2440587.5;
+  }
+
+  function calcSolarTransit(d, zenith) {
+    const jd = getJulianDay(d);
+    const n = Math.round(jd - 2451545.0 - 0.0008 - (lon / 360));
+    const jStar = 2451545.0 + 0.0008 + (lon / 360) + n;
+    const M = (357.5291 + 0.98560028 * (jStar - 2451545.0)) % 360;
+    const C = 1.9148 * Math.sin(M * rad) + 0.0200 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+    const lambda = (M + C + 180 + 102.9372) % 360;
+    const jTransit = jStar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lambda * rad);
+    const delta = Math.asin(Math.sin(lambda * rad) * Math.sin(23.44 * rad));
+
+    const cosOmega = (Math.sin((90 - zenith) * rad) - Math.sin(lat * rad) * Math.sin(delta)) / (Math.cos(lat * rad) * Math.cos(delta));
+
+    if (cosOmega > 1 || cosOmega < -1) return null;
+
+    const omega = Math.acos(cosOmega) * deg;
+    const jRise = jTransit - (omega / 360);
+    const jSet = jTransit + (omega / 360);
+
+    return {
+      rise: new Date((jRise - 2440587.5) * 86400000),
+      set: new Date((jSet - 2440587.5) * 86400000)
     };
+  }
 
-    let activeRadioChannel = "swisspop";
-    let radioAudio = new Audio();
-    radioAudio.volume = 0.65;
-    let isRadioPlaying = false;
+  const sunTimes = calcSolarTransit(date, 90.833) || { rise: new Date(), set: new Date() };
+  const twilight = calcSolarTransit(date, 96.0) || { rise: new Date(), set: new Date() };
 
-    function startBroadcastExperience() {
-        const banner = document.getElementById('unmute-banner');
-        if (banner) banner.style.display = 'none';
-        playRadio(activeRadioChannel);
+  const dayLengthMs = sunTimes.set.getTime() - sunTimes.rise.getTime();
+  const dayHours = Math.floor(dayLengthMs / 3600000);
+  const dayMins = Math.floor((dayLengthMs % 3600000) / 60000);
+
+  const yesterday = new Date(date.getTime() - 86400000);
+  const yestTimes = calcSolarTransit(yesterday, 90.833) || { rise: new Date(), set: new Date() };
+  const yestDiffSec = Math.round((dayLengthMs - (yestTimes.set.getTime() - yestTimes.rise.getTime())) / 1000);
+
+  const nowUtc = date.getTime() / 86400000 + 2440587.5;
+  const nNow = nowUtc - 2451545.0;
+  const mNow = (357.5291 + 0.98560028 * nNow) % 360;
+  const lNow = (mNow + 1.9148 * Math.sin(mNow * rad) + 180 + 102.9372) % 360;
+  const decNow = Math.asin(Math.sin(lNow * rad) * Math.sin(23.44 * rad));
+  const gmtHours = date.getUTCHours() + date.getUTCMinutes() / 60;
+  const solarTime = (gmtHours + (lon / 15)) % 24;
+  const hourAngle = (solarTime - 12) * 15 * rad;
+  const elevation = Math.asin(Math.sin(lat * rad) * Math.sin(decNow) + Math.cos(lat * rad) * Math.cos(decNow) * Math.cos(hourAngle)) * deg;
+
+  return {
+    rise: sunTimes.rise,
+    set: sunTimes.set,
+    dawn: twilight.rise,
+    dusk: twilight.set,
+    dayHours,
+    dayMins,
+    diffSec: yestDiffSec,
+    elevation: Math.round(elevation * 10) / 10
+  };
+}
+
+// 3. A csillagászati panel renderelése Nyíregyházára
+function renderAstro() {
+  const now = new Date();
+  const moon = getNyiregyhazaMoon(now);
+  const sun = getNyiregyhazaSun(now);
+
+  const svgEl = document.getElementById("astro-moon-svg");
+  if (svgEl) svgEl.innerHTML = moon.svg;
+
+  const phaseEl = document.getElementById("astro-moon-phase");
+  if (phaseEl) phaseEl.textContent = moon.phaseName.toUpperCase();
+
+  const illumEl = document.getElementById("astro-moon-illum");
+  if (illumEl) illumEl.textContent = moon.illumPct + "%";
+
+  const subEl = document.getElementById("astro-moon-sub");
+  if (subEl) subEl.textContent = `Holdkor: ${moon.moonAge} napos hold`;
+
+  const countEl = document.getElementById("astro-countdown");
+  if (countEl) {
+    const isDay = now >= sun.rise && now < sun.set;
+    const target = isDay ? sun.set : (now < sun.rise ? sun.rise : new Date(sun.rise.getTime() + 86400000));
+    const diffMs = Math.max(0, target.getTime() - now.getTime());
+    const ch = String(Math.floor(diffMs / 3600000)).padStart(2, "0");
+    const cm = String(Math.floor((diffMs % 3600000) / 60000)).padStart(2, "0");
+    const cs = String(Math.floor((diffMs % 60000) / 1000)).padStart(2, "0");
+    
+    countEl.textContent = isDay ? `⏳ NAPNYUGTÁIG: ${ch}:${cm}:${cs}` : `⏳ NAPKELTÉIG: ${ch}:${cm}:${cs}`;
+  }
+
+  const fmt = d => d.toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" });
+  const sign = sun.diffSec >= 0 ? "+" : "";
+
+  const items = [
+    { label: "Napkelte (Nyíregyháza)", val: fmt(sun.rise), pct: 50, color: "var(--amber)" },
+    { label: "Napnyugta (Nyíregyháza)", val: fmt(sun.set), pct: 85, color: "var(--cherry)" },
+    { label: "Pirkadat (Polgári szürkület)", val: fmt(sun.dawn), pct: 40, color: "var(--cyan)" },
+    { label: "Alkonyat vége (Sötétedés)", val: fmt(sun.dusk), pct: 95, color: "var(--purple)" },
+    { label: "Nappal hossza", val: `${sun.dayHours}ó ${sun.dayMins}p (${sign}${sun.diffSec}mp)`, pct: Math.min(100, (sun.dayHours / 16) * 100), color: "var(--green)" },
+    { label: "Pillanatnyi napmagasság", val: `${sun.elevation > 0 ? "+" : ""}${sun.elevation}°`, pct: Math.max(0, Math.min(100, ((sun.elevation + 20) / 90) * 100)), color: sun.elevation > 0 ? "var(--amber)" : "var(--text-dim)" }
+  ];
+
+  const barsEl = document.getElementById("astro-sun-bars");
+  if (barsEl) {
+    barsEl.innerHTML = items.map(i => `
+      <div class="bar-row">
+        <div class="bar-label"><span>${i.label}</span><span>${i.val}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${i.pct}%;background:${i.color}"></div></div>
+      </div>`).join("");
+  }
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderAll(){
+  renderSidebar();
+  renderCities();
+  renderTelemetry();
+  renderHourly();
+  renderStationAnalyses();
+  renderBalaton();
+  renderPollen();
+  renderAqi();
+  renderSolar();
+  renderMarine();
+  renderWindFull();
+  renderExtremes();
+  renderAllAI();
+  renderTicker();
+  renderRadarMarkers();
+  renderAstro(); // <-- Bekötve a Nyíregyháza csillagászati panel!
+}
+function fmtT(v){ return (Number(v) > 0 ? "+" : "") + v; }
+
+function renderSidebar(){
+  if (!STATIONS.length) return;
+  const s = STATIONS[sideIdx % STATIONS.length];
+  const card = document.getElementById("station-card");
+  card.style.opacity = "0";
+  setTimeout(() => {
+    document.getElementById("side-count").textContent = `${String((sideIdx % STATIONS.length) + 1).padStart(2,"0")} / ${STATIONS.length}`;
+    document.getElementById("st-name").textContent = s.name.toUpperCase();
+    document.getElementById("st-county").textContent = s.county + " vármegye";
+    document.getElementById("st-phrase").textContent = s.phrase;
+    document.getElementById("st-icon").innerHTML = icon(s.icon);
+    document.getElementById("st-temp").textContent = fmtT(s.temp);
+    document.getElementById("st-feels").textContent = fmtT(s.feels) + "°C";
+    document.getElementById("st-wind").textContent = `${s.windSpeed} / ${s.windGust} km/h`;
+    document.getElementById("st-hum").textContent = `${s.humidity}% · ${s.dewPoint}°C`;
+    document.getElementById("st-press").textContent = s.pressure + " hPa";
+    document.getElementById("st-vis").textContent = s.visibility + " km";
+    document.getElementById("st-precip").textContent = s.precip + " mm";
+
+    const srcEl = document.getElementById("st-source");
+    if (srcEl) {
+      srcEl.textContent = (s.source || "ECMWF") + " · " + (s.sourceDetail || "modell");
     }
 
-    function playRadio(genreKey) {
-        activeRadioChannel = genreKey;
-        radioAudio.src = RADIO_STREAMS[genreKey] || RADIO_STREAMS["swisspop"];
-        radioAudio.play().then(() => { isRadioPlaying = true; }).catch(() => {});
-
-        document.querySelectorAll('.radio-genre-btn').forEach(b => b.classList.remove('active-genre'));
-        const activeBtn = Array.from(document.querySelectorAll('.radio-genre-btn')).find(b => b.textContent.toLowerCase().includes(genreKey.replace('swiss','')));
-        if (activeBtn) activeBtn.classList.add('active-genre');
-    }
-
-    function changeRadioGenre(genreKey) {
-        if (!isRadioPlaying) { startBroadcastExperience(); return; }
-        playRadio(genreKey);
-    }
-
-    // 🗺️ MAGYARORSZÁG KARTOGRÁFIAI HATÁRA (VILÁGÍTÓ NEONKÉK HATÁRVONAL)
-    const HUNGARY_BORDER_COORDS = [
-        [47.95, 17.15], [47.78, 17.40], [47.75, 18.15], [47.78, 18.75], [48.05, 18.95],
-        [48.10, 19.80], [48.25, 20.45], [48.55, 20.60], [48.40, 21.65], [48.35, 22.15],
-        [48.00, 22.85], [47.85, 22.75], [47.55, 21.90], [47.15, 21.70], [46.70, 21.50],
-        [46.25, 21.30], [46.12, 20.25], [46.00, 18.85], [45.85, 18.45], [45.75, 17.80],
-        [45.85, 17.10], [46.35, 16.70], [46.50, 16.45], [46.85, 16.35], [47.35, 16.45],
-        [47.65, 16.55], [47.95, 17.15]
-    ];
-
-    const BALATON_GEO_POLYGON = [
-        [46.700, 17.245], [46.740, 17.370], [46.780, 17.520], [46.810, 17.650],
-        [46.880, 17.850], [46.920, 17.890], [46.980, 18.060], [46.960, 18.140],
-        [46.910, 18.020], [46.850, 17.850], [46.780, 17.580], [46.740, 17.400],
-        [46.700, 17.245]
-    ];
-
-    let leafletRadarMap = null;
-    let leafletSatelliteMap = null;
-    let radarLayers = [];
-    let radarFrames = [];
-    let activeFrameIdx = 0;
-    let radarAnimTimer = null;
-    let cityMarkersGroup = null;
-    let isRadarActiveSegment = true;
-    let isSatelliteActiveSegment = false;
-
-    const KEY_GPS_CITIES = [
-        { name: "Budapest", lat: 47.50, lon: 19.04 },
-        { name: "Debrecen", lat: 47.53, lon: 21.63 },
-        { name: "Szeged", lat: 46.25, lon: 20.14 },
-        { name: "Miskolc", lat: 48.10, lon: 20.78 },
-        { name: "Pécs", lat: 46.07, lon: 18.23 },
-        { name: "Győr", lat: 47.69, lon: 17.65 },
-        { name: "Nyíregyháza", lat: 47.96, lon: 21.72 },
-        { name: "Kecskemét", lat: 46.91, lon: 19.69 },
-        { name: "Székesfehérvár", lat: 47.19, lon: 18.41 },
-        { name: "Szombathely", lat: 47.23, lon: 16.62 },
-        { name: "Siófok", lat: 46.90, lon: 18.06 },
-        { name: "Balatonfüred", lat: 46.96, lon: 17.89 },
-        { name: "Keszthely", lat: 46.77, lon: 17.25 }
-    ];
-
-    function initMaps() {
-        if (!leafletRadarMap) {
-            leafletRadarMap = L.map('real-radar-map', {
-                center: [47.16, 19.50], zoom: 7, zoomControl: false, attributionControl: false,
-                dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
-            });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(leafletRadarMap);
-
-            // 🇭🇺 MAGYARORSZÁG VILÁGÍTÓ ORSZÁGHATÁRA (LÁTHATÓ ÉS ÉLES!)
-            L.polygon(HUNGARY_BORDER_COORDS, {
-                color: '#38bdf8', weight: 2.2, opacity: 0.95, fillColor: '#06173b', fillOpacity: 0.35
-            }).addTo(leafletRadarMap);
-
-            L.polygon(BALATON_GEO_POLYGON, { color: '#38bdf8', weight: 1.8, opacity: 0.9, fillColor: '#0284c7', fillOpacity: 0.5 }).addTo(leafletRadarMap);
-            cityMarkersGroup = L.layerGroup().addTo(leafletRadarMap);
-        }
-
-        if (!leafletSatelliteMap) {
-            leafletSatelliteMap = L.map('real-satellite-map', {
-                center: [47.16, 19.50], zoom: 7, zoomControl: false, attributionControl: false,
-                dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
-            });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(leafletSatelliteMap);
-
-            L.polygon(HUNGARY_BORDER_COORDS, {
-                color: '#38bdf8', weight: 2.0, opacity: 0.9, fillColor: '#020b1e', fillOpacity: 0.2
-            }).addTo(leafletSatelliteMap);
-        }
-    }
-
-    function normStr(str) {
-        return (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    }
-
-    function findStationByName(name) {
-        if (!name || stationsList.length === 0) return null;
-        const target = normStr(name);
-        return stationsList.find(s => normStr(s.name) === target || normStr(s.name).includes(target));
-    }
-
-    // 🎯 MÉRTANI PONTOSSÁGÚ JELÖLŐK RENDERELÉSE (ZÉRÓ ELCSÚSZÁS!)
-    function renderGpsCityMarkers() {
-        if (!cityMarkersGroup) return;
-        cityMarkersGroup.clearLayers();
-
-        KEY_GPS_CITIES.forEach(c => {
-            const st = findStationByName(c.name);
-            const tempStr = (st && st.temp !== undefined && st.temp !== null) ? `${st.temp > 0 ? '+' : ''}${st.temp}°` : "";
-
-            const iconHtml = `
-                <div class="radar-marker-wrap">
-                    <div class="radar-marker-dot"></div>
-                    <div class="radar-marker-label">
-                        <span>${c.name.toUpperCase()}</span>
-                        <strong style="color:var(--ws-amber);">${tempStr}</strong>
-                    </div>
-                </div>
-            `;
-            // iconAnchor: [0, 0] biztosítja, hogy a pötty geometriailag a ponton legyen!
-            const customIcon = L.divIcon({ className: '', html: iconHtml, iconSize: [0, 0], iconAnchor: [0, 0] });
-            L.marker([c.lat, c.lon], { icon: customIcon, interactive: false }).addTo(cityMarkersGroup);
-        });
-    }
-
-    async function loadMovingRadarAndSatellite() {
-        try {
-            const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-            const rv = await res.json();
-            if (!rv) return;
-
-            const host = rv.host || "https://tilecache.rainviewer.com";
-
-            // 1. Doppler Radar ciklus
-            if (rv.radar && rv.radar.past && rv.radar.past.length > 0) {
-                const pastFrames = rv.radar.past.slice(-8);
-                if (radarAnimTimer) clearInterval(radarAnimTimer);
-                radarLayers.forEach(l => leafletRadarMap.removeLayer(l));
-                radarLayers = [];
-                radarFrames = pastFrames;
-
-                pastFrames.forEach((frame) => {
-                    const layer = L.tileLayer(`${host}${frame.path}/512/{z}/{x}/{y}/2/1_1.png`, { opacity: 0, zIndex: 100 }).addTo(leafletRadarMap);
-                    radarLayers.push(layer);
-                });
-
-                activeFrameIdx = 0;
-                if (radarLayers[0]) radarLayers[0].setOpacity(0.85);
-
-                radarAnimTimer = setInterval(() => {
-                    if (!isRadarActiveSegment || radarLayers.length === 0) return;
-                    const prevIdx = activeFrameIdx;
-                    activeFrameIdx = (activeFrameIdx + 1) % radarLayers.length;
-
-                    radarLayers[prevIdx].setOpacity(0);
-                    radarLayers[activeFrameIdx].setOpacity(0.85);
-
-                    const curFrame = radarFrames[activeFrameIdx];
-                    const frameDate = new Date(curFrame.time * 1000);
-                    const timeStr = frameDate.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
-                    const isLatest = activeFrameIdx === (radarLayers.length - 1);
-
-                    document.getElementById('lbl-radar-time').textContent = isLatest ? `DOPPLER MOZGÁS: ${timeStr} [LEGFRISEBB ÉLŐ ADAT]` : `DOPPLER MOZGÁS: ${timeStr} (RADAR ARCHÍVUM)`;
-                }, 850);
-            }
-
-            // 2. 🛰️ TŰÉLES INFRAVÖRÖS MŰHOLDTÉRKÉP LEAFLET MULTI-TILE RÉTEGEN
-            if (rv.satellite && rv.satellite.infrared && rv.satellite.infrared.length > 0) {
-                const latestSat = rv.satellite.infrared[rv.satellite.infrared.length - 1];
-                L.tileLayer(`${host}${latestSat.path}/512/{z}/{x}/{y}/0/0_0.png`, {
-                    opacity: 0.88, zIndex: 90
-                }).addTo(leafletSatelliteMap);
-
-                const satDate = new Date(latestSat.time * 1000);
-                document.getElementById('lbl-sat-time').textContent = `INFRAVÖRÖS MŰHOLD: ${satDate.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })} [HD TÖBBRÉTEGŰ]`;
-            }
-
-        } catch (e) {}
-    }
-
-    let broadcastData = null;
-    let stationsList = [];
-    let activeStationIndex = 0;
-    let activeSegmentIndex = 0;
-    let syncSecondsRemaining = 180;
-
-    function sanitize(val, fallback = "--") {
-        return (val !== undefined && val !== null && val !== "") ? val : fallback;
-    }
-
-    function updateLiveClock() {
-        const now = new Date();
-        document.getElementById('lbl-live-clock').textContent = now.toLocaleTimeString('hu-HU', { timeZone: 'Europe/Budapest' });
-        syncSecondsRemaining--;
-        if (syncSecondsRemaining <= 0) {
-            syncSecondsRemaining = 180;
-            fetchBroadcastFeed();
-        }
-        const m = Math.floor(syncSecondsRemaining / 60);
-        const s = syncSecondsRemaining % 60;
-        document.getElementById('lbl-sync-countdown').textContent = `SZINKRON: 0${m}:${String(s).padStart(2, '0')}`;
-    }
-    setInterval(updateLiveClock, 1000);
-    updateLiveClock();
-
-    async function fetchBroadcastFeed() {
-        try {
-            const res = await fetch(BROADCAST_API_URL);
-            if (!res.ok) throw new Error("API kapcsolat megszakadt");
-            const data = await res.json();
-            if (!data || !Array.isArray(data.stations) || data.stations.length === 0) return;
-
-            broadcastData = data;
-            stationsList = data.stations;
-
-            if (data.aiReports) populateAiReports(data.aiReports);
-            if (data.airQuality) renderAirQualityChart(data.airQuality);
-            if (data.pollen) renderPollenChart(data.pollen);
-            if (data.hourlyTrend) renderHourlyGraph(data.hourlyTrend);
-
-            renderGpsCityMarkers();
-            renderSidebarStation();
-            renderTelemetryPages();
-            renderDeepForecast();
-            renderExtremes();
-            renderBalaton();
-            if (data.physicsTelemetry) render5PhysicsSegments(data.physicsTelemetry);
-            
-            queueNextTickerData();
-        } catch(e) {
-            // Hálózati hiba esetén 4 másodperc múlva automatikusan újrapróbálkozik
-            setTimeout(fetchBroadcastFeed, 4000);
-        }
-    }
-
-    function renderAirQualityChart(aq) {
-        if (!aq) return;
-        document.getElementById('aqi-main-val').textContent = `${sanitize(aq.aqi)} EAQI`;
-        let desc = "KIVÁLÓ LEVEGŐ", color = "var(--ws-green)";
-        if (aq.aqi > 20) { desc = "JÓ ÉS TISZTA"; color = "var(--ws-cyan)"; }
-        if (aq.aqi > 40) { desc = "MÉRSÉKELT TERHELÉS"; color = "var(--ws-amber)"; }
-        if (aq.aqi > 60) { desc = "KEDVEZŐTLEN LEVEGŐ"; color = "var(--ws-cherry)"; }
-
-        const descEl = document.getElementById('aqi-main-desc');
-        descEl.textContent = desc; descEl.style.color = color;
-
-        document.getElementById('val-pm25').textContent = `${sanitize(aq.pm25)} µg/m³`;
-        document.getElementById('bar-pm25').style.width = `${Math.min(100, ((aq.pm25 || 0) / 25) * 100)}%`;
-        document.getElementById('val-pm10').textContent = `${sanitize(aq.pm10)} µg/m³`;
-        document.getElementById('bar-pm10').style.width = `${Math.min(100, ((aq.pm10 || 0) / 50) * 100)}%`;
-    }
-
-    function renderPollenChart(pol) {
-        if (!pol) return;
-        document.getElementById('pollen-main-ragweed').textContent = `${pol.ragweed} p/m³`;
-        document.getElementById('pollen-main-desc').textContent = pol.ragweed > 10 ? "ÉLÉNK PARLAGFŰ TERHELÉS" : "ALACSONY PARLAGFŰ SZINT";
-
-        document.getElementById('val-pollen-ragweed').textContent = `${pol.ragweed} db/m³`;
-        document.getElementById('bar-pollen-ragweed').style.width = `${Math.min(100, pol.ragweed * 5)}%`;
-
-        document.getElementById('val-pollen-grass').textContent = `${pol.grass} db/m³`;
-        document.getElementById('bar-pollen-grass').style.width = `${Math.min(100, pol.grass * 4)}%`;
-
-        document.getElementById('val-pollen-birch').textContent = `${pol.birch} db/m³`;
-        document.getElementById('bar-pollen-birch').style.width = `${Math.min(100, pol.birch * 5)}%`;
-
-        document.getElementById('val-pollen-mugwort').textContent = `${pol.mugwort} db/m³`;
-        document.getElementById('bar-pollen-mugwort').style.width = `${Math.min(100, pol.mugwort * 5)}%`;
-    }
-
-    function renderHourlyGraph(hourly) {
-        const container = document.getElementById('hourly-bars-container');
-        if (!container || !Array.isArray(hourly)) return;
-        container.innerHTML = '';
-
-        const sample = hourly.slice(0, 12);
-        const maxTemp = Math.max(...sample.map(h => h.temp), 22);
-        const minTemp = Math.min(...sample.map(h => h.temp), 0);
-        const range = Math.max(1, maxTemp - minTemp);
-
-        sample.forEach(h => {
-            const heightPercent = Math.max(15, Math.min(100, ((h.temp - minTemp) / range) * 85 + 15));
-            container.innerHTML += `
-                <div class="hourly-bar-col">
-                    <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:var(--ws-amber);">${h.temp}°</span>
-                    <div class="hourly-bar-fill" style="height:${heightPercent}%;"></div>
-                    <span style="font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:#94a3b8;">${h.time}</span>
-                </div>
-            `;
-        });
-    }
-
-    function render5PhysicsSegments(pt) {
-        if (!pt) return;
-        if (pt.barometric) {
-            document.getElementById('phy-p-delta').textContent = `${sanitize(pt.barometric.deltaHpa)} hPa`;
-            document.getElementById('phy-p-desc').textContent = (pt.barometric.deltaHpa >= 4) ? "Élénk légnyomás-gradiens: intenzív áramlás." : "Kiegyenlített barometrikus mező: a légköri nyomás stabil.";
-            if (pt.barometric.highest && pt.barometric.lowest) {
-                document.getElementById('phy-p-extremes').innerHTML = `
-                    <div class="wind-rank-row"><span style="color:var(--ws-cyan);">LEGMAGASABB: ${sanitize(pt.barometric.highest.name)}</span><strong>${sanitize(pt.barometric.highest.pressure)} hPa</strong></div>
-                    <div class="wind-rank-row"><span style="color:var(--ws-cherry);">LEGALACSONYABB: ${sanitize(pt.barometric.lowest.name)}</span><strong>${sanitize(pt.barometric.lowest.pressure)} hPa</strong></div>
-                `;
-            }
-        }
-        if (pt.moisture && pt.moisture.maxHumidity) {
-            const mh = pt.moisture.maxHumidity;
-            document.getElementById('phy-h-val').textContent = `${sanitize(mh.humidity)}%`;
-            document.getElementById('phy-h-station').textContent = `${sanitize(mh.name).toUpperCase()} (HARMATPONT: ${sanitize(mh.dewPoint)}°C)`;
-            document.getElementById('phy-h-fogrisk').innerHTML = `Harmatpont-deficit: <strong>${sanitize(mh.dewDeficit)}°C</strong>.<br>` +
-                (Number(mh.dewDeficit) <= 1.5 ? `<span style="color:var(--ws-cherry); font-weight:800;">● MAGAS KÖD- ÉS TELÍTETTSÉGI KOCKÁZAT!</span>` : `<span style="color:var(--ws-green); font-weight:800;">● ZAVARTALAN, PÁRAMENTES LÉGKÖR</span>`);
-        }
-        if (Array.isArray(pt.visibilityTop)) {
-            document.getElementById('phy-vis-list').innerHTML = pt.visibilityTop.map((v, i) => `
-                <div class="wind-rank-row"><span style="color:var(--ws-cyan);">${i+1}. ${sanitize(v.name)}</span><span>${sanitize(v.phrase)} · <strong style="color:${Number(v.visKm) < 6 ? 'var(--ws-cherry)' : 'var(--ws-green)'};">${sanitize(v.visKm)} km</strong></span></div>
-            `).join('');
-        }
-    }
-
-    function populateAiReports(ai) {
-        if (!ai) return;
-        const setBody = (id, text) => {
-            const el = document.getElementById(id);
-            if (el && text) el.innerHTML = text.split('. ').filter(Boolean).map(s => `<span>${s.trim()}${s.endsWith('.') ? '' : '.'}</span>`).join('<br><br>');
-        };
-        setBody('ai-body-synoptic', ai.synoptic);
-        setBody('ai-body-chronicle', ai.chronicle);
-        setBody('ai-body-radarPrecip', ai.radarPrecip);
-        setBody('ai-body-wind', ai.wind);
-        setBody('ai-body-traffic', ai.traffic);
-    }
-
-    function renderSidebarStation() {
-        if (stationsList.length === 0) return;
-        const st = stationsList[activeStationIndex % stationsList.length];
-        const card = document.getElementById('sb-station-card');
-        
-        card.style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('sb-counter-pill').textContent = `${String((activeStationIndex % stationsList.length) + 1).padStart(3, '0')} / ${String(stationsList.length).padStart(3, '0')}`;
-            document.getElementById('sb-city-name').textContent = sanitize(st.name).toUpperCase();
-            document.getElementById('sb-county-name').textContent = `${sanitize(st.county).toUpperCase()} VÁRMEGYE`;
-            document.getElementById('sb-phrase-txt').textContent = sanitize(st.phrase);
-            document.getElementById('sb-temp-giant').textContent = `${(Number(st.temp) > 0) ? '+' : ''}${sanitize(st.temp)}°`;
-            document.getElementById('sb-icon-wrap').innerHTML = getWeatherSvg(st.iconCode, st.isDay);
-
-            document.getElementById('m-feels').textContent = `${(Number(st.feels) > 0) ? '+' : ''}${sanitize(st.feels)}°C`;
-            document.getElementById('m-wind').textContent = `${sanitize(st.windSpeed)} km/h (${sanitize(st.windDirCard)})`;
-            document.getElementById('m-humidity').textContent = `${sanitize(st.humidity)}% · ${sanitize(st.dewPoint)}°C`;
-            document.getElementById('m-pressure').textContent = `${sanitize(st.pressure)} hPa`;
-            document.getElementById('m-uv').textContent = sanitize(st.uvDesc);
-            document.getElementById('m-visibility').textContent = `${sanitize(st.visibility)} km`;
-
-            const strip = document.getElementById('sb-local-3day-strip');
-            strip.innerHTML = '';
-            if (Array.isArray(st.threeDayForecast)) {
-                st.threeDayForecast.forEach(fc => {
-                    strip.innerHTML += `
-                        <div class="sb-3day-cell">
-                            <span style="color:var(--ws-cyan); font-weight:800;">${sanitize(fc.dayName).substring(0, 4)}</span>
-                            <div style="width:20px; height:20px;">${getWeatherSvg(fc.iconCode, true)}</div>
-                            <strong style="color:var(--ws-cherry); font-size:0.75rem;">+${sanitize(fc.max)}°</strong>
-                            <span style="color:var(--ws-cyan); font-size:0.65rem;">+${sanitize(fc.min)}°</span>
-                        </div>
-                    `;
-                });
-            }
-            card.style.opacity = '1';
-        }, 150);
-    }
-    setInterval(() => { activeStationIndex++; renderSidebarStation(); }, 8000);
-
-    function renderTelemetryPages() {
-        if (stationsList.length === 0) return;
-        const buildCard = (st) => `
-            <div class="cov-card-large">
-                <div class="ccl-top"><span class="ccl-city">${sanitize(st.name)}</span><span class="ccl-county">${sanitize(st.county).split(' ')[0]}</span></div>
-                <div class="ccl-main"><div style="width:34px; height:34px;">${getWeatherSvg(st.iconCode, st.isDay)}</div><span class="ccl-temp">${Number(st.temp) > 0 ? '+' : ''}${sanitize(st.temp)}°</span></div>
-                <div class="ccl-phrase">${sanitize(st.phrase)}</div>
-                <div class="ccl-details"><span>Szél: <strong>${sanitize(st.windSpeed)} km/h</strong></span><span>Lökés: <strong>${sanitize(st.windGust)} km/h</strong></span><span>Pára: <strong>${sanitize(st.humidity)}%</strong></span><span>Nyomás: <strong>${sanitize(st.pressure)}</strong></span></div>
-            </div>
-        `;
-        document.getElementById('grid-telemetry-1').innerHTML = stationsList.slice(0, 10).map(buildCard).join('');
-    }
-
-    function renderDeepForecast() {
-        const grid = document.getElementById('city-deep-forecast-10');
-        if (!grid || stationsList.length === 0) return;
-        grid.innerHTML = '';
-        const targets = ["Budapest", "Debrecen", "Szeged", "Miskolc", "Pécs", "Győr", "Nyíregyháza", "Kecskemét", "Székesfehérvár", "Szombathely"];
-        const resolved = targets.map(c => findStationByName(c)).filter(Boolean);
-
-        resolved.slice(0, 10).forEach(st => {
-            let stripHtml = '';
-            if (Array.isArray(st.threeDayForecast)) {
-                st.threeDayForecast.forEach(fc => {
-                    stripHtml += `
-                        <div style="background:rgba(255,255,255,0.05); padding:4px; border-radius:5px; text-align:center;">
-                            <span style="color:var(--ws-cyan); font-weight:800; font-size:0.72rem;">${sanitize(fc.dayName).substring(0, 4)}</span>
-                            <div style="width:24px; height:24px; margin:2px auto;">${getWeatherSvg(fc.iconCode, true)}</div>
-                            <strong style="color:var(--ws-cherry); font-size:0.80rem;">+${sanitize(fc.max)}°</strong>
-                            <span style="color:var(--ws-cyan); font-size:0.70rem; margin-left:3px;">+${sanitize(fc.min)}°</span>
-                        </div>
-                    `;
-                });
-            }
-            grid.innerHTML += `
-                <div class="cdf-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;"><span class="cdf-city-name">${sanitize(st.name)}</span><span style="font-family:'JetBrains Mono',monospace; font-size:1.3rem; font-weight:900; color:var(--ws-amber);">${Number(st.temp) > 0 ? '+' : ''}${sanitize(st.temp)}°C</span></div>
-                    <div style="font-size:0.70rem; color:#cbd5e1; margin:3px 0;">Jelenleg: <strong>${sanitize(st.phrase)}</strong> · Szél: <strong>${sanitize(st.windSpeed)} km/h</strong></div>
-                    <div class="cdf-days-strip">${stripHtml}</div>
-                </div>
-            `;
-        });
-    }
-
-    function renderExtremes() {
-        if (!broadcastData) return;
-        const wBox = document.getElementById('wind-top-list');
-        if (wBox && Array.isArray(broadcastData.topWinds)) {
-            wBox.innerHTML = broadcastData.topWinds.map((w, idx) => `
-                <div class="wind-rank-row"><span style="color:var(--ws-cyan);">${idx + 1}. ${sanitize(w.name)} (${sanitize(w.county)})</span><span>LÖKÉS: <strong style="color:var(--ws-cherry);">${sanitize(w.gust)} km/h</strong> (${sanitize(w.dir)})</span></div>
-            `).join('');
-        }
-        const tBox = document.getElementById('temp-extremes-box');
-        if (tBox && broadcastData.extremes) {
-            const ext = broadcastData.extremes;
-            tBox.innerHTML = `
-                <div style="background:rgba(56,189,248,0.1); border:1.5px solid var(--ws-cyan); padding:14px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <div><div style="font-size:0.75rem; color:var(--ws-cyan); font-weight:800;">❄️ LEGHIDEGEBB TELEPÜLÉS</div><div style="font-size:1.4rem; font-weight:900;">${sanitize(ext.coldest?.name)}</div><div style="font-size:0.70rem; color:#94a3b8;">${sanitize(ext.coldest?.county)} vármegye</div></div>
-                    <div style="font-family:'JetBrains Mono',monospace; font-size:2.4rem; font-weight:900; color:var(--ws-cyan);">${Number(ext.coldest?.temp) > 0 ? '+' : ''}${sanitize(ext.coldest?.temp)}°C</div>
-                </div>
-                <div style="background:rgba(255,17,85,0.1); border:1.5px solid var(--ws-cherry); padding:14px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <div><div style="font-size:0.75rem; color:var(--ws-cherry); font-weight:800;">🔥 LEGMELEGEBB TELEPÜLÉS</div><div style="font-size:1.4rem; font-weight:900;">${sanitize(ext.warmest?.name)}</div><div style="font-size:0.70rem; color:#94a3b8;">${sanitize(ext.warmest?.county)} vármegye</div></div>
-                    <div style="font-family:'JetBrains Mono',monospace; font-size:2.4rem; font-weight:900; color:var(--ws-cherry);">${Number(ext.warmest?.temp) > 0 ? '+' : ''}${sanitize(ext.warmest?.temp)}°C</div>
-                </div>
-            `;
-        }
-    }
-
-    function calculateBalatonStorm(st) {
-        if (!st) return { level: 0, text: "● ALAPFOKÚ VIHARJELZÉS (NYUGODT VÍZ)", cls: "storm-lvl-0" };
-        const gust = Number(st.windGust) || Number(st.windSpeed) || 0;
-        if (gust >= 60) return { level: 2, text: "● II. FOKÚ VIHARRIADÓ (VIHAROS TÓFELÜLET!)", cls: "storm-lvl-2" };
-        if (gust >= 40) return { level: 1, text: "● I. FOKÚ VIHARJELZÉS (FIGYELMEZTETÉS)", cls: "storm-lvl-1" };
-        return { level: 0, text: "● ALAPFOK (BIZTONSÁGOS VÍZITÚRA)", cls: "storm-lvl-0" };
-    }
-
-    function renderBalaton() {
-        const grid = document.getElementById('balaton-lakes-grid');
-        if (!grid || stationsList.length === 0) return;
-        const siofok = findStationByName("Siófok") || stationsList[0];
-        const fured = findStationByName("Balatonfüred") || stationsList[1] || stationsList[0];
-
-        grid.innerHTML = '';
-        [{ title: "DÉLI PART · SIÓFOKI MÉRŐÁLLOMÁS", st: siofok }, { title: "ÉSZAKI PART · BALATONFÜREDI MÉRŐÁLLOMÁS", st: fured }].forEach(lake => {
-            const storm = calculateBalatonStorm(lake.st);
-            grid.innerHTML += `
-                <div class="lake-broad-card">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div><div class="lbc-title">${lake.title}</div><div class="lbc-storm-badge ${storm.cls}">${storm.text}</div></div>
-                        <div style="width:48px; height:48px;">${getWeatherSvg(lake.st.iconCode, lake.st.isDay)}</div>
-                    </div>
-                    <div style="display:flex; gap:2.5cqw; margin:1.2cqw 0;">
-                        <div><div style="font-size:0.75rem; color:#94a3b8; font-weight:700;">MÉRT LEVEGŐ HŐMÉRSÉKLET</div><div style="font-family:'JetBrains Mono',monospace; font-size:2.4rem; font-weight:900; color:var(--ws-amber);">${sanitize(lake.st.temp)}°C</div></div>
-                        <div><div style="font-size:0.75rem; color:var(--ws-cyan); font-weight:700;">JELENLEGI ÁLLAPOT</div><div style="font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:900; color:#fff; margin-top:6px;">${sanitize(lake.st.phrase)}</div></div>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#cbd5e1; border-top:1px solid rgba(255,255,255,0.12); padding-top:8px;">
-                        <div>SZÉL: <strong>${sanitize(lake.st.windSpeed)} km/h</strong></div><div>PÁRATARTALOM: <strong>${sanitize(lake.st.humidity)}%</strong></div><div>LÖKÉS: <strong>${sanitize(lake.st.windGust)} km/h</strong></div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    let tickerAnimId = null, tickerOffset = 0, lastTickerTime = performance.now(), queuedTickerText = null, cachedHalfWidth = 0;
-
-    function queueNextTickerData() {
-        if (stationsList.length === 0) return;
-        const entries = stationsList.map(st => `● ${sanitize(st.name).toUpperCase()}: ${Number(st.temp) > 0 ? '+' : ''}${sanitize(st.temp)}°C (${sanitize(st.phrase)} · Szél: ${sanitize(st.windSpeed)} km/h · Pára: ${sanitize(st.humidity)}%)`);
-        queuedTickerText = entries.join("        ") + "        ";
-        const track = document.getElementById('ticker-smooth-track');
-        if (!track.textContent || track.textContent.includes("letöltése")) {
-            applyTickerText(queuedTickerText);
-            startTickerLoop();
-        }
-    }
-
-    function applyTickerText(text) {
-        const track = document.getElementById('ticker-smooth-track');
-        track.textContent = text + text;
-        cachedHalfWidth = track.scrollWidth / 2;
-    }
-
-    window.addEventListener('resize', () => {
-        const track = document.getElementById('ticker-smooth-track');
-        if (track) cachedHalfWidth = track.scrollWidth / 2;
-        if (leafletRadarMap) leafletRadarMap.invalidateSize();
-        if (leafletSatelliteMap) leafletSatelliteMap.invalidateSize();
+    const strip = document.getElementById("st-3day");
+    strip.innerHTML = "";
+    (s.threeDay || []).forEach(fc => {
+      strip.innerHTML += `
+        <div class="fc-cell">
+          <span class="fc-day">${fc.day.substring(0,3)}</span>
+          <div class="fc-icon">${icon(fc.icon)}</div>
+          <span class="fc-max">${fmtT(fc.max)}°</span>
+          <span class="fc-min">${fmtT(fc.min)}°</span>
+        </div>`;
     });
+    card.style.opacity = "1";
+  }, 100);
+}
 
-    function startTickerLoop() {
-        const track = document.getElementById('ticker-smooth-track');
-        if (tickerAnimId) cancelAnimationFrame(tickerAnimId);
-        const viewport = document.getElementById('ticker-viewport');
-        tickerOffset = viewport ? viewport.clientWidth : window.innerWidth;
-        lastTickerTime = performance.now();
+function renderCities(){
+  const grid = document.getElementById("cities-grid");
+  if (!grid) return;
+  const targets = DATA?.majorCities || [];
+  const norm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  grid.innerHTML = "";
+  targets.forEach(t => {
+    const s = STATIONS.find(x => norm(x.name) === norm(t)) || STATIONS.find(x => norm(x.name).includes(norm(t)));
+    if (!s) return;
+    grid.innerHTML += `
+      <div class="card">
+        <div><div class="card-city">${s.name}</div><div class="card-county">${s.county}</div></div>
+        <div class="card-mid"><div class="card-icon">${icon(s.icon)}</div><div class="card-temp">${fmtT(s.temp)}°</div></div>
+        <div class="card-phrase">${s.phrase}</div>
+        <div class="card-stats">
+          <span>Szél: <strong>${s.windSpeed} km/h</strong></span>
+          <span>Lökés: <strong>${s.windGust} km/h</strong></span>
+          <span>Pára: <strong>${s.humidity}%</strong></span>
+          <span>Látás: <strong>${s.visibility} km</strong></span>
+        </div>
+      </div>`;
+  });
+}
 
-        function stepTicker(now) {
-            const dt = (now - lastTickerTime) / 1000;
-            lastTickerTime = now;
-            tickerOffset -= 28 * dt;
+function renderTelemetry(){
+  const grid = document.getElementById("telem-grid");
+  if (!grid) return;
+  const pages = Math.max(1, Math.ceil(STATIONS.length / 10));
+  const page = teleIdx % pages;
+  const slice = STATIONS.slice(page * 10, page * 10 + 10);
+  document.getElementById("telem-meta").textContent = `${page+1}/${pages} · ${STATIONS.length} állomás`;
+  grid.innerHTML = slice.map(s => `
+    <div class="card">
+      <div><div class="card-city" style="font-size:12px">${s.name}</div><div class="card-county">${s.county.split(" ")[0]}</div></div>
+      <div class="card-mid"><div class="card-icon" style="width:28px;height:28px">${icon(s.icon)}</div><div class="card-temp" style="font-size:20px">${fmtT(s.temp)}°</div></div>
+      <div class="card-phrase">${s.phrase}</div>
+      <div class="card-stats"><span>Szél: <strong>${s.windSpeed}</strong></span><span>Lökés: <strong>${s.windGust}</strong></span></div>
+    </div>`).join("");
+}
 
-            if (cachedHalfWidth > 0 && tickerOffset <= -cachedHalfWidth) {
-                tickerOffset = 0;
-                if (queuedTickerText) { applyTickerText(queuedTickerText); queuedTickerText = null; }
-            }
-            track.style.transform = `translate3d(${tickerOffset}px, 0, 0)`;
-            tickerAnimId = requestAnimationFrame(stepTicker);
-        }
-        tickerAnimId = requestAnimationFrame(stepTicker);
+function renderHourly(){
+  const c = document.getElementById("hourly-chart");
+  if (!c || !DATA?.hourly?.length) return;
+  const arr = DATA.hourly;
+  const temps = arr.map(h => h.temp);
+  const mn = Math.min(...temps), mx = Math.max(...temps);
+  const range = Math.max(4, mx - mn);
+  const loc = (DATA.hourlyLocation || "Budapest").toUpperCase();
+  document.getElementById("hourly-meta").textContent = `${loc} · MIN ${fmtT(mn)}° · MAX ${fmtT(mx)}°`;
+  c.innerHTML = arr.map(h => {
+    const hp = Math.max(12, Math.min(100, ((h.temp - mn) / range) * 82 + 15));
+    const hasPrecip = h.precip > 0.1;
+    return `<div class="hcol" title="${h.time} · ${h.temp}°C ${h.phrase}">
+      <span class="htemp" style="${hasPrecip ? 'color:var(--cyan)' : ''}">${h.temp}°</span>
+      <div class="hbar" style="height:${hp}%${hasPrecip ? ';background:linear-gradient(180deg,var(--cyan) 0%,#0ea5e9 100%)' : ''}"></div>
+      <span class="hhour">${h.time.split(":")[0]}h</span>
+    </div>`;
+  }).join("");
+}
+
+function renderStationAnalyses(){
+  const list = document.getElementById("station-list");
+  if (!list || !DATA?.stationAnalyses) return;
+  const all = DATA.stationAnalyses;
+  const pageSize = 20;
+  const pages = Math.max(1, Math.ceil(all.length / pageSize));
+  const page = stationIdx % pages;
+  const slice = all.slice(page * pageSize, page * pageSize + pageSize);
+  document.getElementById("stat-ana-meta").textContent = `${page+1}/${pages} · ${all.length} állomás`;
+  list.innerHTML = slice.map(s => {
+    const issue = s.issues.length > 0;
+    const hasStorm = s.issues.some(i => i.includes("viharos"));
+    const cls = hasStorm ? "alert" : issue ? "warn" : "";
+    return `<div class="station-row ${cls}">
+      <span class="station-row-name">${s.name}</span>
+      <span class="station-row-temp">${fmtT(s.temp)}°C</span>
+      <span class="station-row-phrase">${s.phrase}</span>
+      <span class="station-row-source">${s.source || ""}</span>
+      ${issue ? `<span class="station-row-issues">⚠ ${s.issues.join(" · ")}</span>` : `<span style="color:var(--green);font-size:0.85em;font-weight:700">✓ OK</span>`}
+    </div>`;
+  }).join("");
+}
+
+function renderBalaton(){
+  const g = document.getElementById("bal-grid");
+  if (!g || !DATA?.balaton) return;
+  const b = DATA.balaton;
+  const basins = [
+    { key: "west", name: "Nyugati medence", sub: "Keszthely · Badacsony" },
+    { key: "mid",  name: "Középső medence", sub: "Fonyód · Balatonakali" },
+    { key: "east", name: "Keleti medence",  sub: "Siófok · Füred · Tihany" }
+  ];
+  
+  const inSeason = b.inSeason !== false;
+  // Ha a scraping elhasalt vagy nincs érvényes adatkapcsolat
+  const isScrapeError = b.fetchSuccess === false || b.error === true;
+
+  g.innerHTML = basins.map(x => {
+    const data = b[x.key] || {};
+    const st = data.station || {};
+    const lvl = data.level;
+
+    let cls = "lb-0";
+    let lbl = "ALAPFOK · NYUGODT VÍZ";
+
+    if (isScrapeError || lvl === null || lvl === undefined || lvl < 0) {
+      cls = "lb-err";
+      lbl = "⚠ ADATHIÁNY / HUNGAROMET HIBA";
+    } else if (!inSeason) {
+      cls = "lb-off";
+      lbl = "SZEZONON KÍVÜL";
+    } else if (lvl === 2) {
+      cls = "lb-2";
+      lbl = "II. FOKÚ VIHARRIADÓ";
+    } else if (lvl === 1) {
+      cls = "lb-1";
+      lbl = "I. FOKÚ VIHARJELZÉS";
+    } else {
+      cls = "lb-0";
+      lbl = "ALAPFOK · NYUGODT VÍZ";
     }
 
-    const SEGMENTS = [
-        { id: "seg-radar", title: "MAGYARORSZÁG CSAPADÉKRADAR (DOPPLER MOZGÓKÉP)" },
-        { id: "seg-satellite", title: "KÁRPÁT-MEDENCE HD FELHŐMŰHOLD (INFRAVÖRÖS)" },
-        { id: "seg-ai-chronicle", title: "NAPI KRÓNIKA & HAJNALI VISSZATEKINTŐ" },
-        { id: "seg-hourly-trend", title: "24 ÓRÁS HŐMÉRSÉKLETI PROFIL" },
-        { id: "seg-pollen", title: "KOPERNIKUSZ CAMS · VALÓS POLLENJELENTÉS" },
-        { id: "seg-cams-aqi", title: "KOPERNIKUSZ CAMS · VALÓS LÉGSZENNYEZETTSÉG (EAQI)" },
-        { id: "seg-phy-pressure", title: "FIZIKAI TELEMETRIA · LÉGNYOMÁS & BAROMETRIKUS HINTA" },
-        { id: "seg-phy-humidity", title: "FIZIKAI TELEMETRIA · PÁRA, HARMATPONT & KÖDVESZÉLY" },
-        { id: "seg-phy-visibility", title: "FIZIKAI TELEMETRIA · LÁTÁSTÁVOLSÁG & TRANZITUTAK" },
-        { id: "seg-ai-synoptic", title: "AI METEOROLÓGUS · SZINOPTIKAI HELYZET" },
-        { id: "seg-ai-radarPrecip", title: "AI METEOROLÓGUS · TÁVOLSÁGI RADAR & CELLAANALÍZIS" },
-        { id: "seg-ai-wind", title: "AI METEOROLÓGUS · SZÉLMEZŐ & LÖKÉSEK" },
-        { id: "seg-ai-traffic", title: "AI METEOROLÓGUS · AUTÓPÁLYÁK (M0-M7)" },
-        { id: "seg-telemetry-1", title: "ORSZÁGOS TELEMETRIA · 72 HAZAI VÁROS" },
-        { id: "seg-city-10", title: "10 KIEMELT NAGYVÁROS 3 NAPOS ELŐREJELZÉSE" },
-        { id: "seg-extremes", title: "SZÉLLÖKÉS TOPLISTA & SZÉLSŐÉRTÉKEK" },
-        { id: "seg-balaton", title: "BALATONI MÉRŐHÁLÓZAT & VIHARJELZÉS" }
-    ];
+    return `
+      <div class="lake">
+        <div>
+          <div class="lake-name">${x.name}</div>
+          <div class="lake-sub">${x.sub}</div>
+          <div class="lake-badge ${cls}">● ${lbl}</div>
+        </div>
+        <div class="lake-temp">${st.temp !== undefined ? fmtT(st.temp) + "°C" : "--"}</div>
+        <div style="font-size:10px;color:#cbd5e1;font-weight:600">${st.phrase || "—"}</div>
+        <div class="lake-stats">
+          <span>Szél: <strong>${st.windSpeed ?? "--"} km/h</strong></span>
+          <span>Lökés: <strong>${st.windGust ?? "--"} km/h</strong></span>
+          <span>Pára: <strong>${st.humidity ?? "--"}%</strong></span>
+          <span>Látás: <strong>${st.visibility ?? "--"} km</strong></span>
+        </div>
+      </div>`;
+  }).join("");
+}
 
-    function advanceSegment() {
-        document.querySelectorAll('.ws-stage-segment').forEach(s => s.classList.remove('active-segment'));
-        activeSegmentIndex = (activeSegmentIndex + 1) % SEGMENTS.length;
-        const cur = SEGMENTS[activeSegmentIndex];
-        const target = document.getElementById(cur.id);
-        if (target) target.classList.add('active-segment');
-        document.getElementById('lbl-segment-title').textContent = cur.title;
-        
-        isRadarActiveSegment = (cur.id === "seg-radar");
-        isSatelliteActiveSegment = (cur.id === "seg-satellite");
+function renderPollen(){
+  const p = DATA?.pollen;
+  if (!p) return;
 
-        if (isRadarActiveSegment && leafletRadarMap) setTimeout(() => leafletRadarMap.invalidateSize(), 50);
-        if (isSatelliteActiveSegment && leafletSatelliteMap) setTimeout(() => leafletSatelliteMap.invalidateSize(), 50);
-    }
-    setInterval(advanceSegment, 16000);
+  const mainEl = document.getElementById("pollen-main");
+  if (mainEl) mainEl.textContent = p.ragweed ?? 0;
 
-    function getWeatherSvg(iconCode, isDay = true) {
-        if (iconCode === 31 || iconCode === 32 || iconCode === 36 || iconCode === 0) {
-            return isDay 
-                ? `<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="5" fill="#facc15"/><g stroke="#facc15" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></g></svg>`
-                : `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" fill="#38bdf8"/><circle cx="19" cy="5" r="1" fill="#fff"/><circle cx="16" cy="2" r="0.8" fill="#fff"/></svg>`;
-        }
-        if ((iconCode >= 27 && iconCode <= 30) || iconCode === 33 || iconCode === 34 || iconCode === 1 || iconCode === 2) {
-            return isDay
-                ? `<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="8" cy="8" r="4" fill="#facc15"/><g stroke="#facc15" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="8" x2="3" y2="8"/><line x1="3" y1="3" x2="4.5" y2="4.5"/></g><path d="M9 19h10a4 4 0 0 0 .8-7.9A5.5 5.5 0 0 0 10 9.5a4 4 0 0 0-1 9.5z" fill="#cbd5e1"/></svg>`
-                : `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M9 4a5 5 0 0 0 5 5c0-.28-.02-.55-.07-.82A3.5 3.5 0 0 1 12 2.5c-.32 0-.64.03-.94.08A4.98 4.98 0 0 0 9 4z" fill="#38bdf8"/><path d="M8 19h11a4 4 0 0 0 .8-7.9A5.5 5.5 0 0 0 9 9.5a4 4 0 0 0-1 9.5z" fill="#94a3b8"/></svg>`;
-        }
-        if (iconCode === 3 || iconCode === 26) {
-            return `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M6 18h12a4 4 0 0 0 .5-7.9A6 6 0 0 0 7 9.5 4.5 4.5 0 0 0 6 18z" fill="#64748b"/></svg>`;
-        }
-        if ((iconCode >= 11 && iconCode <= 18) || iconCode === 39 || iconCode === 40 || iconCode === 45 || (iconCode >= 51 && iconCode <= 67) || (iconCode >= 80 && iconCode <= 82)) {
-            return isDay
-                ? `<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="6" cy="6" r="3" fill="#facc15"/><path d="M8 14h10a3.5 3.5 0 0 0 .5-6.9A5 5 0 0 0 9 6.5a4 4 0 0 0-1 7.5" fill="#94a3b8"/><g stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><line x1="8" y1="16" x2="6" y2="20"/><line x1="13" y1="16" x2="11" y2="20"/><line x1="18" y1="16" x2="16" y2="20"/></g></svg>`
-                : `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M6 2a4 4 0 0 0 4 4c0-.2-.02-.4-.05-.6A2.8 2.8 0 0 1 8 1a3.8 3.8 0 0 0-2 1z" fill="#38bdf8"/><path d="M8 14h10a3.5 3.5 0 0 0 .5-6.9A5 5 0 0 0 9 6.5a4 4 0 0 0-1 7.5" fill="#64748b"/><g stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><line x1="8" y1="16" x2="6" y2="20"/><line x1="13" y1="16" x2="11" y2="20"/><line x1="18" y1="16" x2="16" y2="20"/></g></svg>`;
-        }
-        if (iconCode === 4 || iconCode >= 95) {
-            return `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M7 13h11a3.5 3.5 0 0 0 .5-6.9A5 5 0 0 0 9 5.5a4 4 0 0 0-2 7.5" fill="#475569"/><polygon points="12 11 8 17 12 17 10 23 16 15 12 15" fill="#facc15"/></svg>`;
-        }
-        return `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="#cbd5e1"/></svg>`;
-    }
+  const metaEl = document.getElementById("pollen-meta");
+  if (metaEl && p.pointsCount) {
+    metaEl.textContent = `COPERNICUS CAMS · ${p.pointsCount} RÉGIÓS BÁZISPONT ÁTLAGA`;
+  }
 
-    function toggleTvFullscreen() {
-        const el = document.getElementById('tv-frame');
-        if (!document.fullscreenElement) { if (el.requestFullscreen) el.requestFullscreen(); }
-        else { if (document.exitFullscreen) document.exitFullscreen(); }
-    }
+  const items = [
+    { label: "Parlagfű", val: p.ragweed ?? 0, max: 50, color: "var(--cherry)" },
+    { label: "Pázsitfű",  val: p.grass ?? 0,   max: 40, color: "var(--amber)" },
+    { label: "Nyírfa",    val: p.birch ?? 0,   max: 30, color: "var(--green)" },
+    { label: "Üröm",      val: p.mugwort ?? 0, max: 30, color: "var(--cyan)" },
+    { label: "Égerfa",    val: p.alder ?? 0,   max: 20, color: "var(--purple)" }
+  ];
 
-    window.addEventListener('DOMContentLoaded', () => {
-        initMaps();
-        loadMovingRadarAndSatellite();
-        fetchBroadcastFeed();
+  const bars = document.getElementById("pollen-bars");
+  if (bars) {
+    bars.innerHTML = items.map(i => `
+      <div class="bar-row">
+        <div class="bar-label"><span>${i.label}</span><span>${i.val} db/m³</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, (i.val/i.max)*100)}%;background:${i.color}"></div></div>
+      </div>`).join("");
+  }
+}
+
+function renderAqi(){
+  const a = DATA?.airQuality;
+  if (!a) return;
+  document.getElementById("aqi-main").textContent = a.aqi;
+  let desc = "KIVÁLÓ LEVEGŐ", col = "var(--green)";
+  if (a.aqi > 20 && a.aqi <= 40){ desc = "JÓ MINŐSÉG"; col = "var(--cyan)"; }
+  else if (a.aqi > 40 && a.aqi <= 60){ desc = "MÉRSÉKELT"; col = "var(--amber)"; }
+  else if (a.aqi > 60 && a.aqi <= 80){ desc = "KEDVEZŐTLEN"; col = "var(--orange)"; }
+  else if (a.aqi > 80){ desc = "ERŐSEN SZENNYEZETT"; col = "var(--cherry)"; }
+  document.getElementById("aqi-desc").textContent = desc;
+  document.getElementById("aqi-desc").style.color = col;
+  document.getElementById("aqi-main").style.color = col;
+  const items = [
+    { label: "PM2.5", val: a.pm25, max: 25, color: "var(--green)" },
+    { label: "PM10",  val: a.pm10, max: 50, color: "var(--cyan)" },
+    { label: "NO₂",   val: a.no2, max: 40, color: "var(--amber)" },
+    { label: "Ózon (O₃)", val: a.o3, max: 120, color: "var(--cherry)" }
+  ];
+  document.getElementById("aqi-bars").innerHTML = items.map(i => `
+    <div class="bar-row">
+      <div class="bar-label"><span>${i.label}</span><span>${i.val} µg/m³</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, (i.val/i.max)*100)}%;background:${i.color}"></div></div>
+    </div>`).join("");
+}
+
+function renderSolar(){
+  const s = DATA?.radiation;
+  if (!s) return;
+
+  const mainEl = document.getElementById("solar-main");
+  if (mainEl) mainEl.textContent = s.shortwave ?? "--";
+
+  const subEl = document.getElementById("solar-sub");
+  if (subEl) {
+    subEl.textContent = s.pointsCount 
+      ? `W/m² · ${s.pointsCount} tájegység súlyozott átlaga` 
+      : "W/m² · országos területi átlag";
+  }
+
+  const items = [
+    { label: "Közvetlen sugárzás", val: s.direct ?? 0, max: 800, color: "var(--amber)" },
+    { label: "Diffúz sugárzás", val: s.diffuse ?? 0, max: 300, color: "var(--cyan)" },
+    { label: "Normál direkt (DNI)", val: s.dni ?? 0, max: 900, color: "var(--cherry)" }
+  ];
+
+  const bars = document.getElementById("solar-bars");
+  if (bars) {
+    bars.innerHTML = items.map(i => `
+      <div class="bar-row">
+        <div class="bar-label"><span>${i.label}</span><span>${i.val} W/m²</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, (i.val/i.max)*100)}%;background:${i.color}"></div></div>
+      </div>`).join("");
+  }
+}
+
+function renderMarine(){
+  const m = DATA?.marine;
+  if (!m) return;
+
+  // Vízhőfok és állapot frissítése
+  const tempEl = document.getElementById("marine-temp");
+  if (tempEl) tempEl.textContent = m.seaTemp !== null ? (m.seaTemp + "°C") : "--";
+
+  const stateEl = document.getElementById("marine-state");
+  if (stateEl) stateEl.textContent = m.waveState || "Normál tavi vízállapot";
+
+  const srcEl = document.getElementById("marine-source");
+  if (srcEl && m.source) srcEl.textContent = m.source;
+
+  // Dinamikus sávok a valós szél és a kiszámolt tavi hullámzás alapján
+  const items = [
+    { label: "Becsült hullámmagasság", val: m.waveHeight ?? 0.1, max: 1.5, unit: " m", color: (m.waveHeight >= 0.8 ? "var(--cherry)" : "var(--cyan)") },
+    { label: "Hullámperiódus", val: m.wavePeriod ?? 1.5, max: 5.0, unit: " s", color: "var(--green)" },
+    { label: "Tavi alapszél (Siófok)", val: m.windSpeed ?? 0, max: 80, unit: " km/h", color: "var(--amber)" },
+    { label: "Legerősebb széllökés", val: m.windGust ?? 0, max: 100, unit: " km/h (" + (m.waveDir || "ÉNy") + ")", color: (m.windGust >= 60 ? "var(--cherry)" : "var(--orange)") }
+  ];
+
+  const barsEl = document.getElementById("marine-bars");
+  if (barsEl) {
+    barsEl.innerHTML = items.map(i => `
+      <div class="bar-row">
+        <div class="bar-label">
+          <span>${i.label}</span>
+          <span>${i.val}${i.unit}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.max(4, Math.min(100, (i.val / i.max) * 100))}%;background:${i.color}"></div>
+        </div>
+      </div>`).join("");
+  }
+}
+
+function renderWindFull(){
+  const container = document.getElementById("wind-full");
+  if (!container || !DATA?.topWinds) return;
+  container.innerHTML = `
+    <div class="wind-full-header">
+      <span>🌪️ TOP 5 LEGERŐSEBB SZÉLLÖKÉS</span>
+      <span style="font-size:0.6em;color:var(--text-mute)">VALÓS MÉRÉSI TOPLISTA</span>
+    </div>
+    <div class="wind-full-list">
+      ${DATA.topWinds.map((w, i) => `
+        <div class="wind-full-item">
+          <div class="wind-rank">#${i+1}</div>
+          <div class="wind-city">${w.name}</div>
+          <div class="wind-county">${w.county}</div>
+          <div class="wind-gust">${w.gust} km/h</div>
+          <div class="wind-dir">${w.dir} irány</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderExtremes(){
+  const t = document.getElementById("temp-ext");
+  const p = document.getElementById("press-ext");
+  if (DATA?.extremes){
+    const c = DATA.extremes.coldest, w = DATA.extremes.warmest;
+    t.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
+        <div style="min-width:0"><div style="font-size:10px;color:var(--cyan);font-weight:700">❄ LEGHIDEGEBB</div><div style="font-size:14px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:clamp(22px,2.4vw,38px);font-weight:800;color:var(--cyan);white-space:nowrap">${fmtT(c.temp)}°</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;gap:8px">
+        <div style="min-width:0"><div style="font-size:10px;color:var(--cherry);font-weight:700">🔥 LEGMELEGEBB</div><div style="font-size:14px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.name}</div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:clamp(22px,2.4vw,38px);font-weight:800;color:var(--cherry);white-space:nowrap">${fmtT(w.temp)}°</div>
+      </div>`;
+  }
+  if (DATA?.pressure){
+    const pr = DATA.pressure;
+    p.innerHTML = `
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:var(--text-mute);font-weight:700">BAROMETRIKUS GRADIENS</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:clamp(22px,2.4vw,38px);font-weight:800;color:var(--amber)">${pr.delta} hPa</div>
+      </div>
+      ${pr.highest ? `<div class="rank" style="font-size:10px;padding:6px 10px"><span>Legmagasabb · ${pr.highest.name}</span><span class="rank-val">${pr.highest.value} hPa</span></div>` : ""}
+      ${pr.lowest ? `<div class="rank" style="font-size:10px;padding:6px 10px"><span>Legalacsonyabb · ${pr.lowest.name}</span><span style="color:var(--cyan);font-weight:800">${pr.lowest.value} hPa</span></div>` : ""}
+    `;
+  }
+}
+
+function renderAIPage(id, icon, title, value, valClass, text, footerText) {
+  const el = document.getElementById(`ai-page-${id}`);
+  if (!el) return;
+  el.innerHTML = `
+    <div class="ai-page-icon">${icon}</div>
+    <div class="ai-page-title">${title}</div>
+    <div class="ai-page-value ${valClass}">${value}</div>
+    <div class="ai-page-text">${text}</div>
+    <div class="ai-page-footer">
+      <span>METEOROLÓGIAI HPC SZINTÉZIS · ${STATIONS.length} ÁLLOMÁS</span>
+      <span class="ok">● ÉLŐ ANALÍZIS</span>
+    </div>
+  `;
+}
+
+function renderAllAI(){
+  if (!DATA?.ai) return;
+  const ai = DATA.ai;
+  const stations = DATA.stations || [];
+  const avgCloud = Math.round(stations.reduce((s,x) => s + x.cloudCover, 0) / stations.length);
+  const avgTemp = Math.round(stations.reduce((s,x) => s + x.temp, 0) / stations.length);
+  const cloudClass = avgCloud >= 70 ? "bad" : avgCloud >= 40 ? "warn" : "ok";
+  renderAIPage("synoptic", "🌍", "SZINOPTIKAI HELYZET", `${avgTemp}°C · ${avgCloud}% felhőzet`, cloudClass, ai.synoptic, "");
+
+  const withPrecip = stations.filter(s => s.precip > 0);
+  const totalPrecip = withPrecip.reduce((s,x) => s + x.precip, 0);
+  renderAIPage("precip", "💧", "CSAPADÉK ANALÍZIS", withPrecip.length === 0 ? "Száraz légkör" : `${withPrecip.length} állomás · ${totalPrecip.toFixed(1)} mm`, withPrecip.length === 0 ? "ok" : "warn", ai.precip, "");
+
+  const avgGust = Math.round(stations.reduce((s,x) => s + x.windGust, 0) / stations.length);
+  renderAIPage("wind", "🌬️", "SZÉLMEZŐ ELEMZÉS", `${avgGust} km/h átlagos lökés`, avgGust >= 50 ? "bad" : "ok", ai.wind, "");
+
+  const avgVis = Math.round(stations.reduce((s,x) => s + (x.visibility || 15), 0) / stations.length);
+  renderAIPage("visibility", "👁️", "LÁTÁSTÁVOLSÁG", `${avgVis} km átlag`, avgVis < 5 ? "warn" : "ok", ai.visibility, "");
+
+  const deltaP = DATA.pressure?.delta || 0;
+  renderAIPage("pressure", "⚖️", "LÉGNYOMÁS & FRONT", `${deltaP} hPa gradiens`, Math.abs(deltaP) >= 4 ? "warn" : "ok", ai.pressure, "");
+
+  const aqi = DATA.airQuality?.aqi ?? 20;
+  renderAIPage("health", "🌸", "EGÉSZSÉGÜGY & LEVEGŐ", `${aqi} EAQI index`, aqi > 50 ? "warn" : "ok", ai.health, "");
+
+  renderAIPage("balaton", "🌊", "BALATON & VIZEK", DATA.balaton?.inSeason ? "Aktív szezon" : "Szezonon kívül", "ok", ai.balaton, "");
+  renderAIPage("traffic", "🛣️", "KÖZLEKEDÉS", "Közúti index", "ok", ai.traffic, "");
+  renderAIPage("solar", "☀️", "NAPENERGIA", DATA.radiation ? `${DATA.radiation.shortwave} W/m²` : "--", "info", ai.solar, "");
+  renderAIPage("summary", "🎯", "ÖSSZEFOGLALÓ", "Országos szintézis", "ok", ai.summary, "");
+  renderAIPage("nowcast", "📡", "NOWCAST CELLA- ÉS FELHŐTRAJEKTÓRIA", DATA.nowcast?.headline || "Következő 2 óra mozgása", DATA.nowcast?.risk === "high" ? "bad" : DATA.nowcast?.risk === "med" ? "warn" : "ok", ai.nowcast || "A radaranimáció alapján a csapadékcellák sodródása kiegyenlített.", "");
+}
+
+function renderTicker(){
+  const el = document.getElementById("tick-track");
+  if (!el || !STATIONS.length) return;
+  const text = STATIONS.map(s =>
+    `● ${s.name.toUpperCase()} · ${fmtT(s.temp)}°C · ${s.phrase} · Szél ${s.windSpeed} km/h · Lökés ${s.windGust} km/h · Pára ${s.humidity}%`
+  ).join("     ◆     ");
+  el.textContent = text + "     ◆     " + text;
+}
+
+function rotateSegment(){
+  document.querySelectorAll(".seg").forEach(s => s.classList.remove("active"));
+  segIdx = (segIdx + 1) % SEGS.length;
+  const cur = SEGS[segIdx];
+  const t = document.getElementById(cur.id);
+  if (t) t.classList.add("active");
+  document.getElementById("seg-title").textContent = cur.title;
+  if (cur.id === "seg-sat" && satMap) setTimeout(() => satMap.invalidateSize(), 100);
+}
+
+/* ============================================================
+   HIVATALOS HUNGAROMET ÉLŐ RADAR ÉS MŰHOLD MOTOR (100% VALÓS)
+   ============================================================ */
+const OMSZ_OVERLAY_CITIES = [
+  { n: "Budapest", x: 48.5, y: 44.5 },
+  { n: "Győr", x: 30.5, y: 34.0 },
+  { n: "Sopron", x: 17.5, y: 35.5 },
+  { n: "Szombathely", x: 18.0, y: 53.0 },
+  { n: "Pécs", x: 38.5, y: 84.5 },
+  { n: "Siófok", x: 37.5, y: 55.0 },
+  { n: "Szeged", x: 63.5, y: 81.0 },
+  { n: "Debrecen", x: 83.0, y: 43.0 },
+  { n: "Miskolc", x: 70.0, y: 24.0 },
+  { n: "Nyíregyháza", x: 84.0, y: 28.5 },
+  { n: "Békéscsaba", x: 75.0, y: 69.0 }
+];
+
+function renderRadarMarkers(){
+  const container = document.getElementById("radar-cities-layer");
+  if (!container || !STATIONS.length) return;
+  container.innerHTML = "";
+
+  const norm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+
+  OMSZ_OVERLAY_CITIES.forEach(c => {
+    const st = STATIONS.find(x => norm(x.name) === norm(c.n)) || STATIONS.find(x => norm(x.name).includes(norm(c.n)));
+    const tempStr = st ? `${st.temp > 0 ? "+" : ""}${st.temp}°` : "";
+
+    container.innerHTML += `
+      <div style="position:absolute;left:${c.x}%;top:${c.y}%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:3px;pointer-events:none;">
+        <div style="width:5px;height:5px;border-radius:50%;background:#020610;border:1px solid #ffffff;flex-shrink:0;"></div>
+        <div style="background:rgba(2,6,16,0.85);color:#ffffff;font-family:'Space Grotesk',sans-serif;font-size:9px;font-weight:800;padding:1px 4px;border-radius:2px;border:1px solid rgba(255,255,255,0.4);white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.7);">
+          <span>${c.n.toUpperCase()}</span>
+          ${tempStr ? `<span style="color:#fbbf24;margin-left:3px;font-family:'JetBrains Mono',monospace;">${tempStr}</span>` : ""}
+        </div>
+      </div>
+    `;
+  });
+}
+
+/* ============================================================
+   VAJPUHA ANIMÁLT RADAR ÉS MŰHOLD MOTOR (TV BROADCAST LOOP)
+   ============================================================ */
+let radarFrames = [];
+let radarFrameIdx = 0;
+let radarPlayTimer = null;
+
+async function loadRadar() {
+  const radarImg = document.getElementById("omsz-radar-img");
+  const timeHud = document.getElementById("radar-time");
+  const titleHud = document.getElementById("radar-hud-title");
+  const timeline = document.getElementById("radar-timeline");
+  if (!radarImg) return;
+
+  // 11 képkocka az elmúlt 60 percből, a legfrissebb fixen legalább 10 perccel ezelőtti (0 db 404 hiba)
+  const candidateOffsets = [60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
+
+  const checkFrame = (minAgo) => {
+    return new Promise((resolve) => {
+      const d = new Date();
+      // Tisztán UTC idősíkban lépünk vissza minAgo percet
+      d.setUTCMinutes(d.getUTCMinutes() - minAgo);
+      const round5 = Math.floor(d.getUTCMinutes() / 5) * 5;
+      d.setUTCMinutes(round5, 0, 0);
+
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(d.getUTCDate()).padStart(2, "0");
+      const h = String(d.getUTCHours()).padStart(2, "0");
+      const min = String(d.getUTCMinutes()).padStart(2, "0");
+
+      const url = `https://m.met.hu/images/idojaras/radar/Rccw/Rccw${y}${m}${day}_${h}${min}.jpg`;
+      const img = new Image();
+      img.onload = () => {
+        const local = new Date(Date.UTC(y, d.getUTCMonth(), d.getUTCDate(), parseInt(h, 10), parseInt(min, 10)));
+        resolve({
+          url,
+          timeStr: local.toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" }),
+          minAgo
+        });
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
     });
+  };
+
+  const results = await Promise.all(candidateOffsets.map(checkFrame));
+  // Csak a sikeresen betöltött képkockák maradnak, időrendben
+  radarFrames = results.filter(Boolean);
+
+  if (!radarFrames.length) {
+    if (timeHud) timeHud.textContent = "RADAR ÁTMENETILEG NEM ELÉRHETŐ";
+    return;
+  }
+
+  // Idővonal csíkok létrehozása az elérhető képkockákhoz
+  if (timeline) {
+    timeline.innerHTML = radarFrames.map((_, i) => `<div class="rt-dot" id="rdot-${i}" style="width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2);transition:background 0.2s;"></div>`).join("");
+  }
+
+  // Animációs ciklus újraindítása
+  if (radarPlayTimer) {
+    clearInterval(radarPlayTimer);
+    clearTimeout(radarPlayTimer);
+  }
+  radarFrameIdx = 0;
+
+  function stepRadar() {
+    if (!radarFrames.length) return;
+    const f = radarFrames[radarFrameIdx];
+    radarImg.src = f.url;
+
+    const isLive = radarFrameIdx === radarFrames.length - 1;
+    if (titleHud) titleHud.textContent = isLive ? "● ÉLŐ RADARÁLLAPOT" : "▶ RADAR LEJÁTSZÁS";
+    if (timeHud) timeHud.textContent = `${f.timeStr} ${isLive ? "(FRISS)" : `(-${f.minAgo}p)`}`;
+
+    if (timeline) {
+      radarFrames.forEach((_, i) => {
+        const el = document.getElementById(`rdot-${i}`);
+        if (el) el.style.background = i === radarFrameIdx ? (isLive ? "#ff1155" : "#38bdf8") : "rgba(255,255,255,0.2)";
+      });
+    }
+
+    radarFrameIdx++;
+    if (radarFrameIdx >= radarFrames.length) {
+      radarFrameIdx = 0;
+      // A legfrissebb képnél tartsunk 2.2 másodperces megállót, mielőtt újrakezdődik a loop
+      clearInterval(radarPlayTimer);
+      radarPlayTimer = setTimeout(() => {
+        radarPlayTimer = setInterval(stepRadar, 450);
+      }, 2200);
+    }
+  }
+
+  stepRadar();
+  radarPlayTimer = setInterval(stepRadar, 450);
+}
+
+let satFrames = [];
+let satFrameIdx = 0;
+let satPlayTimer = null;
+
+async function loadSatellite() {
+  const satImg = document.getElementById("omsz-sat-img");
+  const timeHud = document.getElementById("sat-time");
+  const titleHud = document.getElementById("sat-hud-title");
+  const timeline = document.getElementById("sat-timeline");
+  if (!satImg) return;
+
+  // A HungaroMet műhold percei: 10, 25, 40, 55. Az elmúlt 90 perc kockáit kérjük le.
+  const offsets = [90, 75, 60, 45, 30, 15];
+  
+  const checkSatFrame = (minAgo) => {
+    return new Promise((resolve) => {
+      const d = new Date();
+      d.setUTCMinutes(d.getUTCMinutes() - minAgo);
+      const m = d.getUTCMinutes();
+      if (m >= 55) d.setUTCMinutes(55, 0, 0);
+      else if (m >= 40) d.setUTCMinutes(40, 0, 0);
+      else if (m >= 25) d.setUTCMinutes(25, 0, 0);
+      else if (m >= 10) d.setUTCMinutes(10, 0, 0);
+      else {
+        d.setUTCHours(d.getUTCHours() - 1);
+        d.setUTCMinutes(55, 0, 0);
+      }
+
+      const y = d.getUTCFullYear();
+      const mon = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(d.getUTCDate()).padStart(2, "0");
+      const h = String(d.getUTCHours()).padStart(2, "0");
+      const min = String(d.getUTCMinutes()).padStart(2, "0");
+
+      const url = `https://m.met.hu/images/idojaras/muhold/bMw9/bMw9${y}${mon}${day}_${h}${min}.jpg`;
+      const img = new Image();
+      img.onload = () => {
+        const local = new Date(Date.UTC(y, d.getUTCMonth(), d.getUTCDate(), parseInt(h), parseInt(min)));
+        resolve({
+          url,
+          timeStr: local.toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" }),
+          minAgo
+        });
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
+  const results = await Promise.all(offsets.map(checkSatFrame));
+  satFrames = results.filter(Boolean);
+
+  if (!satFrames.length) {
+    if (timeHud) timeHud.textContent = "MŰHOLD ÁTMENETILEG NEM ELÉRHETŐ";
+    return;
+  }
+
+  if (timeline) {
+    timeline.innerHTML = satFrames.map((_, i) => `<div class="st-dot" id="sdot-${i}" style="width:14px;height:4px;border-radius:2px;background:rgba(255,255,255,0.2);transition:background 0.2s;"></div>`).join("");
+  }
+
+  if (satPlayTimer) clearInterval(satPlayTimer);
+  satFrameIdx = 0;
+
+  function stepSat() {
+    if (!satFrames.length) return;
+    const f = satFrames[satFrameIdx];
+    satImg.src = f.url;
+
+    const isLive = satFrameIdx === satFrames.length - 1;
+    if (titleHud) titleHud.textContent = isLive ? "● ÉLŐ MŰHOLDFELVÉTEL" : "▶ MŰHOLD FELHŐVONULÁS";
+    if (timeHud) timeHud.textContent = `${f.timeStr} ${isLive ? "(FRISS)" : `(-${f.minAgo}p)`}`;
+
+    if (timeline) {
+      satFrames.forEach((_, i) => {
+        const el = document.getElementById(`sdot-${i}`);
+        if (el) el.style.background = i === satFrameIdx ? "#38bdf8" : "rgba(255,255,255,0.2)";
+      });
+    }
+
+    satFrameIdx++;
+    if (satFrameIdx >= satFrames.length) {
+      satFrameIdx = 0;
+      clearInterval(satPlayTimer);
+      satPlayTimer = setTimeout(() => {
+        satPlayTimer = setInterval(stepSat, 600);
+      }, 2500);
+    }
+  }
+
+  stepSat();
+  satPlayTimer = setInterval(stepSat, 600);
+}
+
+/* ============================================================
+   FULLSCREEN
+   ============================================================ */
+let cursorTimer = null;
+function hideCursorSoon(){
+  const frame = document.getElementById("frame");
+  if (!document.fullscreenElement) return;
+  if (cursorTimer) clearTimeout(cursorTimer);
+  cursorTimer = setTimeout(() => frame.classList.add("idle"), 2000);
+}
+document.addEventListener("mousemove", () => {
+  const frame = document.getElementById("frame");
+  frame.classList.remove("idle");
+  hideCursorSoon();
+});
+
+async function toggleFS(){
+  const el = document.getElementById("frame");
+  const btn = document.getElementById("fs-btn");
+  try {
+    if (!document.fullscreenElement){
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      btn.textContent = "✕ KILÉPÉS";
+      if (screen.orientation && screen.orientation.lock){
+        try { await screen.orientation.lock("landscape"); } catch(e){}
+      }
+      hideCursorSoon();
+    } else {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      btn.textContent = "⛶ TELJES KÉPERNYŐ";
+      if (screen.orientation && screen.orientation.unlock){
+        try { screen.orientation.unlock(); } catch(e){}
+      }
+    }
+  } catch (e){
+    console.warn("Fullscreen hiba:", e);
+  }
+}
+document.addEventListener("fullscreenchange", () => {
+  const btn = document.getElementById("fs-btn");
+  btn.textContent = document.fullscreenElement ? "✕ KILÉPÉS" : "⛶ TELJES KÉPERNYŐ";
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+window.addEventListener("DOMContentLoaded", () => {
+  loadRadar();
+  loadSatellite();
+  fetchData();
+  setInterval(loadRadar, 2 * 60 * 1000); // 2 percenként radar frissítés
+  setInterval(loadSatellite, 5 * 60 * 1000); // 5 percenként műhold frissítés
+  setInterval(() => { sideIdx++; renderSidebar(); }, 6500);
+  setInterval(() => { if (STATIONS.length) { teleIdx++; renderTelemetry(); } }, 10000);
+  setInterval(() => { if (DATA?.stationAnalyses) { stationIdx++; renderStationAnalyses(); } }, 12000);
+  setInterval(rotateSegment, 18000);
+  setInterval(tickClock, 1000);
+  tickClock();
+  requestAnimationFrame(tickStep);
+});
 </script>
 </body>
 </html>
